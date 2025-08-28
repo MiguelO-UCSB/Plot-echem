@@ -16,4 +16,4 @@ Clone the repo with GitHub.
 Open main.py in your favorite Python environment (Example: Spyder).
 Run the program in the environment.
 
-![App Screenshot](https://github.com/SepLabUCSB/decay-fits/blob/trunk/docs/Code_inputs.png?raw=true)
+![App Screenshot](https://github.com/MiguelO-UCSB/Plot-echem/blob/main/Other/GUI_example.png?raw=true)
