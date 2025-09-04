@@ -48,8 +48,9 @@ class PrintLogger():
             for msg in ('Warning', 'warning', 'Error', 'error','Input', 'Invalid'):
                 if msg in text:
                     color='red'
-            if 'Ploting' in text:
-                color='blue'
+            if msg in ('Ploting', 'plotting', 'Calculated', 'calculated'):
+                if msg in text:
+                    color='blue'
             if 'exported' in text:
                 color='green'
             self.textbox.insert('end', text, color) # write text to textbox
@@ -186,7 +187,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.marker_style.trace('w', self.fig_opt_changed)
         
         # Data control traces
-        self.apply_notch_filter.trace('w', self.setting_notch_filter)
+        self.apply_notch_filter.trace('w', self.fig_opt_changed)
         
         # Partical import data traces
         self.start_after_option.trace('w', self.fig_opt_changed)
@@ -311,17 +312,17 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
             if len(x) > 0 and len(y) > 0:
                 x_data.append(x)
                 y_data.append(y)
+
+        if not x_data:
+            print('Error: Cannot Fourier transform data. Load file first.')
+            return
         
-        # if len(data['x']) == 0:
-        #     print('Error: Load file first')
-        # else:
-        #     if not hasattr(self, 'Popup_Generator'):
-        #         self.Popup_Generator = Popup_Generator()
-        #     self.Popup_Generator.get(self, 'FT_data', data)
-    
-    def setting_notch_filter(self, *args):
-        print('Warning: reload data file to apply or remove filter')
-        return
+        # Keep as separate lists of arrays
+        data = {"x": x_data, "y": y_data}
+        
+        if not hasattr(self, 'Popup_Generator'):
+            self.Popup_Generator = Popup_Generator()
+        self.Popup_Generator.get(self, 'FT_data', data)
                 
 if __name__ == '__main__':
     root = Tk()

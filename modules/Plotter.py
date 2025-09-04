@@ -11,6 +11,8 @@ import os
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
+from scipy import optimize, signal
+from scipy.signal import find_peaks
 import sys
 # Get the directory of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -435,13 +437,22 @@ class EchemFig():
                 color_idx = self.file_num
             else:
                 color_idx = count
+            
+            # Apply notch filter and calculate sampling rate
+            calc_samp_freq = int(1 / np.mean(np.diff(d['t'][count])))
+            
+            val = self.GUI.apply_notch_filter.get()
+            APPLY_NOTCH_FILTER = bool_map.get(val.strip().lower(), False)
+            
+            if APPLY_NOTCH_FILTER == True:
+                yvals = self.notch_filter(yvals, calc_samp_freq)
                 
             count += 1
             
             # ✅ final check outside try/except to control plotting
             if skip_sweep:
                 continue
-            
+                
             if color_idx in cycles_to_plot:
                 self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
                              yvals[:len(xvals)] + y_shifts[color_idx],
@@ -543,6 +554,27 @@ class EchemFig():
         
         self.ax.set_position(orig_pos)    
         self.draw_artists()
+    
+    def notch_filter(self, i, calc_samp_freq):
+        freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
+        freqs = [lbl.strip() for lbl in freq_strs if lbl.strip() != '']
+        
+        if len(freqs) == 0:
+            print('Error: Notch filter not set\nSet Frequencies with "," as delimiter')
+            return i
+        
+        for freq in freqs:
+            notch_freq = freq # Frequency to be removed (Hz)
+            quality_factor = 30 # Quality factor. A higher Q results in a narrower notch.
+            print(f'Calculated sampling frequency at {calc_samp_freq} Hz with {notch_freq} Hz filtered')
+            
+            b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, calc_samp_freq)
+
+            # Apply the filter
+            filtered_signal = signal.filtfilt(b_notch, a_notch, i)
+            i = filtered_signal
+        
+        return i
     
     def set_colormap_for_plot(self, n_colors):
         # Colormap option from GUI
@@ -727,7 +759,7 @@ class EchemFig():
         # Update y-axis minor tick multiple if provided
         if y_minor_multiple != '':
             try:
-                step = float(y_multiple)
+                step = float(y_minor_multiple)
                 ymin, ymax = self.ax.get_ylim()
                 n_ticks = abs((ymax - ymin) / step)
                 if n_ticks > 100:
@@ -1038,7 +1070,7 @@ class EchemFig():
         # Update y-axis minor tick multiple if provided
         if y_minor_multiple != '':
             try:
-                step = float(y_multiple)
+                step = float(y_minor_multiple)
                 ymin, ymax = self.ax.get_ylim()
                 n_ticks = abs((ymax - ymin) / step)
                 if n_ticks > 100:

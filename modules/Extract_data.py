@@ -3,8 +3,6 @@ from io import StringIO
 import scipy.io
 import os
 import pandas as pd
-from scipy import optimize, signal
-from scipy.signal import find_peaks
 
 '''
 If multiple files to plot, add them to data folder and set Muti_files to True
@@ -108,15 +106,6 @@ class extract_data():
                 NUM_SWEEPS = 1
                 
             if Ts is not None:
-                # Apply notch filter and calculate sampling rate
-                calc_samp_freq = int(1 / np.mean(np.diff(Ts)))
-                
-                val = self.GUI.apply_notch_filter.get()
-                APPLY_NOTCH_FILTER = bool_map.get(val.strip().lower(), False)
-                
-                if APPLY_NOTCH_FILTER == True:
-                    Is = self.notch_filter(Is, calc_samp_freq)
-                
                 ##Split file by number of sweeps
                 T, V, I = (np.array_split(Ts, NUM_SWEEPS),
                            np.array_split(Vs, NUM_SWEEPS),
@@ -271,28 +260,6 @@ class extract_data():
             file_max = bio_file_max + seccm_file_max + heka_file_max
             
             return extracted_data, file_max
-        
-    def notch_filter(self, i, calc_samp_freq):
-        freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
-        freqs = [lbl.strip() for lbl in freq_strs if lbl.strip() != '']
-        
-        if len(freqs) == 0:
-            print('Error: Notch filter not set\nSet Frequencies with "," as delimiter')
-            return i
-        
-        print('Warning: Notch filter applied')
-        for freq in freqs:
-            notch_freq = freq # Frequency to be removed (Hz)
-            quality_factor = 30 # Quality factor. A higher Q results in a narrower notch.
-            print(f'Calculated sampling frequency at {calc_samp_freq} Hz with {notch_freq} Hz filtered')
-            
-            b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, calc_samp_freq)
-
-            # Apply the filter
-            filtered_signal = signal.filtfilt(b_notch, a_notch, i)
-            i = filtered_signal
-        
-        return i
     
 class extract:
     

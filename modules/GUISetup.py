@@ -561,9 +561,6 @@ class GUISetupMethods():
         # Label(frame, text='Import partial data: ').grid(row=1, column=0, sticky=(E))
         # self.import_partial_data = OptionMenuStringVar(frame, Overlay_options, 1, 1, (W,E), idx=1,)
         
-        Label(frame, text='Note: ').grid(row=2, column=0, sticky=(E))
-        Label(frame, text='Only works with single file').grid(row=2, column=1, sticky=(E))
-        
         Label(frame, text='Apply Notch Filter: ').grid(row=3, column=0, sticky=(E))
         self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 3, 1, (W,E), idx=1,)
         
