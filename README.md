@@ -23,11 +23,11 @@ Supported files:
 
    Biologic .txt
       
-      - Format: Tab separated (time/s	Ewe/V	<I>/mA cycle number) or (time/s	Ewe/V	<I>/mA) or (time/s	Ewe/V) or (freq/Hz	Re(Z)/Ohm	-Im(Z)/Ohm	|Z|/Ohm	Phase(Z)/deg)
+      - Format: Tab separated (time/s Ewe/V <I>/mA cycle number) or (time/s Ewe/V <I>/mA) or (time/s Ewe/V) or (freq/Hz Re(Z)/Ohm -Im(Z)/Ohm |Z|/Ohm Phase(Z)/deg)
    
    SECCM .csv
 
-      - Format: Comma separated (t/s,	E/V, I/A)
+      - Format: Comma separated (t/s, E/V, I/A)
    
    Autolab EIS files .txt
 
