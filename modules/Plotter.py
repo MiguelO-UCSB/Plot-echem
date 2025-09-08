@@ -454,6 +454,12 @@ class EchemFig():
                 continue
                 
             if color_idx in cycles_to_plot:
+                # 🟢 Only apply legend once if Overlay=True
+                if Overlay and count > 1:
+                    label = None
+                else:
+                    label = legend_labels[color_idx]
+                    
                 self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
                              yvals[:len(xvals)] + y_shifts[color_idx],
                              color=colors[color_idx],
@@ -461,9 +467,7 @@ class EchemFig():
                              markersize = marker_sizes[color_idx],
                              linestyle = line_styles[color_idx],
                              linewidth = line_sizes[color_idx], 
-                             label=legend_labels[color_idx])
-
-            
+                             label=label)
             
         axis_labels = {'t': f'Time ({time_units})', 'V': f'E vs. {ref_label} ({ref_units})', 'I': f'Current ({current_units})'}
         # self.ax.set_box_aspect(1)
