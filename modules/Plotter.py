@@ -241,7 +241,7 @@ class EchemFig():
                 self.set_params_IV()
                 
             if self.extracted_data[file_to_plot][-1] == 'EIS':
-                self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.file_num, self.file_type = self.extracted_data[file_to_plot]
+                self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.NUM_SWEEPS, self.file_num, self.file_type = self.extracted_data[file_to_plot]
                 self.set_params_EIS()
             print(f'Plotting file {file_to_plot+1}')
             return
@@ -886,7 +886,6 @@ class EchemFig():
         '''
         
         count = 0
-        self.NUM_SWEEPS = 1
         
         # Decide how many colors are needed
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
@@ -904,14 +903,14 @@ class EchemFig():
         
         units = Impedance_units_conv[impedance_units]
         
-        if Overlay:
-            color_idx = self.file_num
-        else:
-            color_idx = count
-            
         while count < self.NUM_SWEEPS:
-            self.ax.plot(self.real_Z/units  + x_shifts[color_idx],
-                         self.imag_Z/units  + y_shifts[color_idx],
+            if Overlay:
+                color_idx = self.file_num
+            else:
+                color_idx = count
+                
+            self.ax.plot(self.real_Z[count]/units  + x_shifts[color_idx],
+                         self.imag_Z[count]/units  + y_shifts[color_idx],
                          color=colors[color_idx],
                          marker = marker_styles[color_idx],
                          markersize = marker_sizes[color_idx],
@@ -919,7 +918,11 @@ class EchemFig():
                          linewidth = line_sizes[color_idx], 
                          label = legend_labels[color_idx])
             count += 1
-        
+            
+        try:
+            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect_EIS.get())))
+        except ValueError as e:
+            print(f'Error: Box aspect not set beacuse of {e}')
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
         self.ax.set_xlabel(f"Z ' ({impedance_units})")
         self.ax.set_ylabel(f"- Z '' ({impedance_units})")
@@ -944,7 +947,6 @@ class EchemFig():
         '''
         
         count = 0
-        self.NUM_SWEEPS = 1
         
         # Decide how many colors are needed
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
@@ -961,16 +963,16 @@ class EchemFig():
         x_shifts, y_shifts = self.set_EIS_shifts(n_colors)
 
         units = Impedance_units_conv[impedance_units]
-        
-        if Overlay:
-            color_idx = self.file_num
-        else:
-            color_idx = count
             
         while count < self.NUM_SWEEPS:
+            if Overlay:
+                color_idx = self.file_num
+            else:
+                color_idx = count
+            
             if option == 'Z':
-                self.ax.plot(self.freq  + x_shifts[color_idx],
-                             np.log10(self.abs_Z)/units + y_shifts[color_idx],
+                self.ax.plot(self.freq[count]  + x_shifts[color_idx],
+                             np.log10(self.abs_Z[count])/units + y_shifts[color_idx],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -980,8 +982,8 @@ class EchemFig():
                 ylabel = f'log(|Z|) ({impedance_units})'
                 
             elif option == 'Phase':
-                self.ax.plot(self.freq  + x_shifts[color_idx], 
-                             self.phase + y_shifts[color_idx],
+                self.ax.plot(self.freq[count]  + x_shifts[color_idx], 
+                             self.phase[count] + y_shifts[color_idx],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -992,6 +994,10 @@ class EchemFig():
             
             count += 1
         
+        try:
+            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect_EIS.get())))
+        except ValueError as e:
+            print(f'Error: Box aspect not set beacuse of {e}')
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
         self.ax.set_xlabel('Frequency (Hz)')
         self.ax.set_ylabel(ylabel)

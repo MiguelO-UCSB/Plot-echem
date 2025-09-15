@@ -445,19 +445,23 @@ class GUISetupMethods():
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         
         '''Axis'''
-        Label(AxisFrame, text='X-axis tick multiple: ').grid(row=0, column=0, sticky=(E))
-        self.x_axis_tickmultiple_EIS = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
+        self.box_aspect_EIS = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='1')
+        Label(AxisFrame, text='').grid(row=1, column=0, sticky=(E))
+        Label(AxisFrame, text='X-axis tick multiple: ').grid(row=2, column=0, sticky=(E))
+        self.x_axis_tickmultiple_EIS = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Minor tick multiple: ').grid(row=1, column=0, sticky=(E))
-        self.x_axis_minor_tickmultiple_EIS = EntryStringVar(AxisFrame, 10, 1, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Minor tick multiple: ').grid(row=3, column=0, sticky=(E))
+        self.x_axis_minor_tickmultiple_EIS = EntryStringVar(AxisFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Min: ').grid(row=2, column=0, sticky=(E))
-        self.echem_xminval_EIS = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Min: ').grid(row=4, column=0, sticky=(E))
+        self.echem_xminval_EIS = EntryStringVar(AxisFrame, 10, 4, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Max: ').grid(row=2, column=3, sticky=(E))
-        self.echem_xmaxval_EIS = EntryStringVar(AxisFrame, 10, 2, 4, (W,E), tab=True,
+        Label(AxisFrame, text='Max: ').grid(row=4, column=3, sticky=(E))
+        self.echem_xmaxval_EIS = EntryStringVar(AxisFrame, 10, 4, 4, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='').grid(row=4, column=0, sticky=(E))
+        Label(AxisFrame, text='').grid(row=5, column=0, sticky=(E))
         Label(AxisFrame, text='Y-axis tick multiple: ').grid(row=10, column=0, sticky=(E))
         self.y_axis_tickmultiple_EIS = EntryStringVar(AxisFrame, 10, 10, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')

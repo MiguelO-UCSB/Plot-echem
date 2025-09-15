@@ -52,7 +52,14 @@ class extract_data():
                     NUM_SWEEPS = 1
                 
                 if get_col[0] == 'freq/Hz':
-                    freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(file)
+                    if len(get_col) == 6:
+                        freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(file)
+                        NUM_SWEEPS = 1
+                    if len(get_col) == 7:
+                        freq, real_Z, imag_Z, abs_Z, phase, sweeps = extract.bio_data_PEIS_cycles(file)
+                        NUM_SWEEPS = int(sweeps[-1])
+                        if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                            NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file: {file.rsplit("/", 1)[-1]}')
                 
                 if len(get_col) == 4:
@@ -113,7 +120,12 @@ class extract_data():
                 extracted_data = [T, V, I, NUM_SWEEPS, 0, 'Norm']
                 
             if freq is not None:
-                extracted_data = [freq, real_Z, imag_Z, abs_Z, phase, 0, 'EIS']
+                freq, real_Z, imag_Z, abs_Z, phase = (np.array_split(freq, NUM_SWEEPS),
+                                                      np.array_split(real_Z, NUM_SWEEPS),
+                                                      np.array_split(imag_Z, NUM_SWEEPS),
+                                                      np.array_split(abs_Z, NUM_SWEEPS),
+                                                      np.array_split(phase, NUM_SWEEPS))
+                extracted_data = [freq, real_Z, imag_Z, abs_Z, phase, NUM_SWEEPS, 0, 'EIS']
             
             return extracted_data, 0
         
@@ -150,7 +162,14 @@ class extract_data():
                     print(f'\nPloting OCV .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                             
                 if get_col[0] == 'freq/Hz':
-                    freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(f)
+                    if len(get_col) == 6:
+                        freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(f)
+                        NUM_SWEEPS = 1
+                    if len(get_col) == 7:
+                        freq, real_Z, imag_Z, abs_Z, phase, sweeps = extract.bio_data_PEIS_cycles(f)
+                        NUM_SWEEPS = int(sweeps[-1])
+                        if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                            NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     
                 if len(get_col) == 4:
@@ -176,7 +195,12 @@ class extract_data():
                     extracted_data.append([T, V, I, NUM_SWEEPS, file_num, 'Norm'])
                     
                 if freq is not None:
-                    extracted_data.append([freq, real_Z, imag_Z, abs_Z, phase, file_num, 'EIS'])
+                    freq, real_Z, imag_Z, abs_Z, phase = (np.array_split(freq, NUM_SWEEPS),
+                                                          np.array_split(real_Z, NUM_SWEEPS),
+                                                          np.array_split(imag_Z, NUM_SWEEPS),
+                                                          np.array_split(abs_Z, NUM_SWEEPS),
+                                                          np.array_split(phase, NUM_SWEEPS))
+                    extracted_data.append([freq, real_Z, imag_Z, abs_Z, phase, NUM_SWEEPS, file_num, 'EIS'])
                 
                 file_num += 1
         
@@ -297,6 +321,18 @@ class extract:
         phase = np.array(df['phase'])
         
         return freq, real_Z, imag_Z, abs_Z, phase
+    
+    def bio_data_PEIS_cycles(file):
+        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 'nc'), skiprows=1, sep='\t')
+        
+        freq = np.array(df['freq'])
+        real_Z = np.array(df['r(Z)'])
+        imag_Z = np.array(df['im(Z)'])
+        abs_Z = np.array(df['|Z|'])
+        phase = np.array(df['phase'])
+        sweeps = np.array(df['nc'])
+        
+        return freq, real_Z, imag_Z, abs_Z, phase, sweeps
     
     def bio_data_no_cycle(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t')
