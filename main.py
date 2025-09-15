@@ -6,8 +6,14 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog, messagebox
 import time
+import io
+import subprocess
+from PIL import Image
 
-
+# Windows needs pywin32
+if sys.platform.startswith("win"):
+    import win32clipboard
+    
 # Get the directory of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -172,6 +178,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.Overlay_.trace('w', self.fig_opt_changed)
         self.plot_cmap.trace('w', self.fig_opt_changed)
         self.Colorbar_.trace('w', self.fig_opt_changed)
+        self.Location_for_cbar.trace('w', self.fig_opt_changed)
         
         # EIS traces
         self.EIS_view_selection.trace('w', self.fig_opt_changed)
@@ -323,6 +330,47 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         if not hasattr(self, 'Popup_Generator'):
             self.Popup_Generator = Popup_Generator()
         self.Popup_Generator.get(self, 'FT_data', data)
+    
+    def copy_figure_to_clipboard(self):
+        """Copy current matplotlib figure to system clipboard (cross-platform)."""
+        buf = io.BytesIO()
+        self.fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+        buf.seek(0)
+        img_bytes = buf.getvalue()
+        
+        if sys.platform.startswith("win"):
+            # --- Windows ---
+            image = Image.open(io.BytesIO(img_bytes))
+            output = io.BytesIO()
+            image.convert("RGB").save(output, "BMP")
+            data = output.getvalue()[14:]  # strip BMP header
+            output.close()
+    
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+            win32clipboard.CloseClipboard()
+            print("✔️ Figure copied to clipboard 🪟")
+        
+        elif sys.platform == "darwin":
+            # --- macOS ---
+            p = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE)
+            p.communicate(img_bytes)
+            print("✔️ Figure copied to clipboard 🍎")
+        
+        elif sys.platform.startswith("linux"):
+            # --- Linux ---
+            try:
+                p = subprocess.Popen(
+                    ["xclip", "-selection", "clipboard", "-t", "image/png"],
+                    stdin=subprocess.PIPE
+                )
+                p.communicate(img_bytes)
+                print("✔️ Figure copied to clipboard (Linux)")
+            except FileNotFoundError:
+                print("⚠️ xclip not found. Install with: sudo apt install xclip")
+        else:
+            print("⚠️ Clipboard copy not supported on this platform.")
                 
 if __name__ == '__main__':
     root = Tk()

@@ -28,7 +28,7 @@ Current_Units = ['A', 'mA', '\u03BCA', 'nA', 'pA', 'fA']
 
 Potential_Units = ['kV', 'V', 'mV', '\u03BCV']
 
-Reference_ = ['SCE', 'RHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A']
+Reference_ = ['SCE', 'Ag/AgCl','RHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A']
 
 Export_format_types = ['png', 'pdf', 'svg', 'jpg']
 
@@ -152,9 +152,13 @@ class GUISetupMethods():
     
     def MakeUpdateFrame(self, frame):
         # Reset ADC view button
-        Button(frame, text='Update Plot', width=70, 
+        Button(frame, text='Update Plot', width=36, 
                command=self.EchemFig.update_plot).grid(
-                   column=0, row=0, sticky=(W,E))
+                   row=0, column=0, sticky=(W,E))
+        # Copy to Clipboard Button
+        Button(frame, text="Copy Figure to Clipboard", width=37,
+               command=self.copy_figure_to_clipboard).grid(
+                   row=0, column=1, sticky="we")
         return
     
     def MakePlotParamsFrame(self, frame):
@@ -183,7 +187,7 @@ class GUISetupMethods():
         # Track whether we're resizing automatically (window) or manually (entry)
         self.resize_mode = "auto"  # can be 'auto' or 'manual'
         
-        self.fig = plt.Figure(figsize=(4,4), dpi=100)
+        self.fig = plt.Figure(figsize=(4,4), dpi=110)
         self.fig.add_subplot(111)
         
         self.MakeResizeFrame(ResizeFrame)     
@@ -323,19 +327,23 @@ class GUISetupMethods():
         inner_tabs.add(ColorbarFrame, text='  Colorbar  ')
         
         '''Axis'''
-        Label(AxisFrame, text='X-axis tick multiple: ').grid(row=0, column=0, sticky=(E))
-        self.x_axis_tickmultiple = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
+        self.box_aspect = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='1')
+        Label(AxisFrame, text='').grid(row=1, column=0, sticky=(E))
+        Label(AxisFrame, text='X-axis tick multiple: ').grid(row=2, column=0, sticky=(E))
+        self.x_axis_tickmultiple = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Minor tick multiple: ').grid(row=1, column=0, sticky=(E))
-        self.x_axis_minor_tickmultiple = EntryStringVar(AxisFrame, 10, 1, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Minor tick multiple: ').grid(row=3, column=0, sticky=(E))
+        self.x_axis_minor_tickmultiple = EntryStringVar(AxisFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Min: ').grid(row=2, column=0, sticky=(E))
-        self.echem_xminval = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
+        Label(AxisFrame, text='Min: ').grid(row=4, column=0, sticky=(E))
+        self.echem_xminval = EntryStringVar(AxisFrame, 10, 4, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='Max: ').grid(row=2, column=3, sticky=(E))
-        self.echem_xmaxval = EntryStringVar(AxisFrame, 10, 2, 4, (W,E), tab=True,
+        Label(AxisFrame, text='Max: ').grid(row=4, column=3, sticky=(E))
+        self.echem_xmaxval = EntryStringVar(AxisFrame, 10, 4, 4, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(AxisFrame, text='').grid(row=4, column=0, sticky=(E))
+        Label(AxisFrame, text='').grid(row=5, column=0, sticky=(E))
         Label(AxisFrame, text='Y-axis tick multiple: ').grid(row=9, column=0, sticky=(E))
         self.y_axis_tickmultiple = EntryStringVar(AxisFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -378,12 +386,24 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         
         '''Colorbar'''
-        Label(ColorbarFrame, text='Colorbar: ').grid(row=14, column=0, sticky=(E))
-        self.Colorbar_ = OptionMenuStringVar(ColorbarFrame, Overlay_options, 14, 1, (W,E), idx=1,)
+        Label(ColorbarFrame, text='Colorbar: ').grid(row=0, column=0, sticky=(E))
+        self.Colorbar_ = OptionMenuStringVar(ColorbarFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        Label(ColorbarFrame, text='Size: ').grid(row=1, column=0, sticky=(E))
+        self.fraction_for_cbar = EntryStringVar(ColorbarFrame, 10, 1, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='5')
+        # Label(ColorbarFrame, text='Shrink: ').grid(row=2, column=0, sticky=(E))
+        # self.shrink_for_cbar = EntryStringVar(ColorbarFrame, 10, 2, 1, (W,E), tab=True,
+        #                                           bind_key='<Return>', default='1')
+        # Label(ColorbarFrame, text='Aspect: ').grid(row=3, column=0, sticky=(E))
+        # self.aspect_for_cbar = EntryStringVar(ColorbarFrame, 10, 3, 1, (W,E), tab=True,
+        #                                           bind_key='<Return>', default='20')
+        Label(ColorbarFrame, text='Pad: ').grid(row=4, column=0, sticky=(E))
+        self.pad_for_cbar = EntryStringVar(ColorbarFrame, 10, 4, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='5')
         
-        Label(ColorbarFrame, text='Label: ').grid(row=15, column=0, sticky=(E))
-        self.cbar_label = EntryStringVar(ColorbarFrame, 10, 15, 1, (W,E), tab=True,
-                                                  bind_key='<Return>', default='')
+        # Label(ColorbarFrame, text='Label: ').grid(row=15, column=0, sticky=(E))
+        # self.cbar_label = EntryStringVar(ColorbarFrame, 10, 15, 1, (W,E), tab=True,
+        #                                           bind_key='<Return>', default=' ')
         
         Label(ColorbarFrame, text='Location: ').grid(row=16, column=0, sticky=(E))
         self.Location_for_cbar = OptionMenuStringVar(ColorbarFrame, Location_cbar, 16, 1, (W,E), idx=0,)

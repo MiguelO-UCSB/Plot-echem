@@ -99,8 +99,8 @@ class EchemFig():
         self.fig = fig
         self.ax  = fig.gca()
         
-        if not hasattr(self, "divider"):
-            self.divider = make_axes_locatable(self.ax)
+        self.cbar = None
+        self.cax = None
 
         self.ln, = self.ax.plot([0,1],[0,1])
         # self.load_style_file("Z:\Projects\Miguel\Spyder\style.mplstyle")
@@ -185,29 +185,19 @@ class EchemFig():
         '''
         Clear the figure
         '''
+        axes_to_remove = [ax for ax in self.fig.axes if ax is not self.ax]
+        for ax in axes_to_remove:
+            self.fig.delaxes(ax)
         self.ax.cla()
 
         self.ln, = self.ax.plot([],[])
         self.clear_artists()
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
         
         if not hasattr(self, "style_dir") or self.style_dir is None:
             self.style_dir = None
         else:
             plt.style.use(self.style_dir)
-            
-        try:
-            if hasattr(self, "cbar") and self.cbar:
-                self.cbar.remove()
-                self.cbar = None
-                print('Colorbar removed')
-            if hasattr(self, "cax") and self.cax:
-                self.cax.remove()
-                self.divider.remove()
-                self.cax = None
-                print('Divider removed')
-        except Exception:
-            pass
             
         self.fig.canvas.draw()
         # self.draw_artists()
@@ -470,7 +460,11 @@ class EchemFig():
                              label=label)
             
         axis_labels = {'t': f'Time ({time_units})', 'V': f'E vs. {ref_label} ({ref_units})', 'I': f'Current ({current_units})'}
-        # self.ax.set_box_aspect(1)
+        try:
+            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect.get())))
+        except ValueError as e:
+            print(f'Error: Box aspect not set beacuse of {e}')
+            
         self.ax.set_xlabel(axis_labels[xlabel])
         self.ax.set_ylabel(axis_labels[ylabel])
         self.ax.set_xscale('linear')
@@ -486,79 +480,104 @@ class EchemFig():
         add_legend = bool_map.get(self.GUI.Legend_.get().strip().lower(), False)
         if add_legend == True:
             self.add_legend_to_plot()
-                
-        color_bar = bool_map.get(self.GUI.Colorbar_.get().strip().lower(), False)
-        if color_bar == False:
-            # Remove colorbar if it exists
-            if hasattr(self, "cbar") and self.cbar:
-                try:
-                    self.cbar.remove()
-                except:
-                    pass
-                self.cbar = None
-                delattr(self, "cbar")
-            if hasattr(self, "cax") and self.cax:
-                try:
-                    self.cax.remove()
-                except:
-                    pass
-                self.cax = None
-                delattr(self, "cax")
-            
-        if color_bar == True:
-            # --- Create divider & cax only once ---
-            location = self.GUI.Location_for_cbar.get()
-            if location == 'top':
-                orientation = 'horizontal'
-            else:
-                orientation = 'vertical'
-                
-            if not hasattr(self, "divider"):
-                self.divider = make_axes_locatable(self.ax)
-            if not hasattr(self, "cax"):
-                self.cax = self.divider.append_axes(location, size="5%", pad=0.05)
-                dummy_norm = mpl.colors.Normalize(vmin=1, vmax=1)
-                dummy_sm = mpl.cm.ScalarMappable(norm=dummy_norm, cmap=cmap)
-                self.cbar = self.fig.colorbar(dummy_sm, cax=self.cax, orientation=orientation)
-            
-            # location, label, aspect (ratio of long to short), fraction
-            cbar_label = self.GUI.cbar_label.get()
-            
-            # --- Update colorbar instead of recreating ---
-            self.cbar.update_normal(sm)
-            self.cbar.set_label(cbar_label)
-            
-            # --- Get labels from GUI ---
-            label_strs = self.GUI.labels_for_cbar.get().split(',')
-            cbar_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
-            try:
-                num_ticks = int(self.GUI.ticknum_for_cbar.get().strip())
-            except ValueError:
-                num_ticks = None
-                
-            # Generate ticks
-            if num_ticks and num_ticks > 1:
-                cbar_ticks = np.linspace(1, n_colors, num_ticks)
-            else:
-                cbar_ticks = np.linspace(1, n_colors, n_colors)
-            self.cbar.set_ticks(cbar_ticks)
-            
-            # If labels provided, must match number of ticks
-            if cbar_labels and len(cbar_labels) != len(cbar_ticks):
-                print("Warning: Number of labels does not match number of ticks.\nLabels are separated by commas\nIgnoring labels.")
-                cbar_labels = []
-            
-            if cbar_labels:
-                self.cbar.ax.set_yticklabels(cbar_labels)
-            self.cax.set_position(self.ax.get_position())
-            print(orientation)
-            if orientation == 'horizontal':
-                # Set the ticks position to the top
-                self.cbar.ax.xaxis.set_ticks_position('top')
+        
+        self.add_colorbar_to_plot(cmap, sm, n_colors)
         
         self.ax.set_position(orig_pos)    
         self.draw_artists()
     
+    def add_colorbar_to_plot(self, cmap, sm, n_colors):
+        color_bar = bool_map.get(self.GUI.Colorbar_.get().strip().lower(), False)
+        
+        # ---- Remove old colorbar and cax if disabling
+        if not color_bar:
+            if hasattr(self, "cbar") and self.cbar:
+                try:
+                    self.cbar.remove()
+                    print("Cbar removed")
+                except Exception:
+                    pass
+                self.cbar = None
+    
+            if hasattr(self, "cax") and self.cax:
+                try:
+                    self.fig.delaxes(self.cax)
+                    print("Cax removed")
+                except Exception:
+                    pass
+                self.cax = None
+    
+            # 🔑 Force layout recalculation so plot expands back
+            # self.fig.subplots_adjust(right=0.9)   # reset padding
+            self.fig.tight_layout()               # let Matplotlib reclaim space
+            return
+        
+        # ---- Otherwise, create a fresh cax
+        divider = make_axes_locatable(self.ax)
+        
+        # ---- Get location and orientation
+        location = self.GUI.Location_for_cbar.get()
+        if location in ['top', 'bottom']:
+            orientation = 'horizontal'
+        else:
+            location = 'right' # Default to right if not top/bottom
+            orientation = 'vertical'
+        
+        # ---- Get sizing parameters
+        try:
+            fraction_val = float(self.GUI.fraction_for_cbar.get())
+        except (ValueError, AttributeError):
+            fraction_val = 15
+            
+        try:
+            pad_val = float(self.GUI.pad_for_cbar.get())
+        except (ValueError, AttributeError):
+            pad_val = 5
+            
+        size_str = f"{fraction_val:.1f}%"
+        pad_str  = f"{pad_val:.1f}%"
+        self.cax = divider.append_axes(location, size=size_str, pad=pad_str)
+        
+        # Create dummy mappable just to initialize
+        dummy_norm = mpl.colors.Normalize(vmin=1, vmax=1)
+        dummy_sm = mpl.cm.ScalarMappable(norm=dummy_norm, cmap=cmap)
+        
+        # ---- Create the new colorbar
+        self.cbar = self.fig.colorbar(dummy_sm, cax=self.cax, orientation=orientation)
+        self.cbar.update_normal(sm)
+        
+        # ---- Get labels from GUI
+        self.cbar.set_label(' ')
+        
+        label_strs = self.GUI.labels_for_cbar.get().split(',')
+        cbar_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
+        try:
+            num_ticks = int(self.GUI.ticknum_for_cbar.get().strip())
+        except ValueError:
+            num_ticks = None
+            
+        # Generate ticks
+        if num_ticks and num_ticks > 1:
+            cbar_ticks = np.linspace(1, n_colors, num_ticks)
+        else:
+            cbar_ticks = np.linspace(1, n_colors, n_colors)
+        self.cbar.set_ticks(cbar_ticks)
+        
+        # If labels provided, must match number of ticks
+        if cbar_labels and len(cbar_labels) != len(cbar_ticks):
+            print("Warning: Number of labels does not match number of ticks.\nLabels are separated by commas\nIgnoring labels.")
+            cbar_labels = []
+        
+        if cbar_labels:
+            if orientation == 'vertical':
+                self.cbar.ax.set_yticklabels(cbar_labels)
+            else:
+                self.cbar.ax.set_xticklabels(cbar_labels)
+        
+        if orientation == 'horizontal':
+            # Set the ticks position to the top
+            self.cbar.ax.xaxis.set_ticks_position('top')
+        
     def notch_filter(self, i, calc_samp_freq):
         freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
         freqs = [lbl.strip() for lbl in freq_strs if lbl.strip() != '']
