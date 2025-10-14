@@ -156,7 +156,7 @@ class GUISetupMethods():
                command=self.EchemFig.update_plot).grid(
                    row=0, column=0, sticky=(W,E))
         # Copy to Clipboard Button
-        Button(frame, text="Copy Figure to Clipboard", width=37,
+        Button(frame, text="Copy Figure to Clipboard", width=36,
                command=self.copy_figure_to_clipboard).grid(
                    row=0, column=1, sticky="we")
         return
@@ -185,7 +185,7 @@ class GUISetupMethods():
                                
     def MakeEchemFrame(self, frame, ResizeFrame):
         # Track whether we're resizing automatically (window) or manually (entry)
-        self.resize_mode = "auto"  # can be 'auto' or 'manual'
+        self.resize_mode = "manual"  # can be 'auto' or 'manual'
         
         self.fig = plt.Figure(figsize=(4,4), dpi=110)
         self.fig.add_subplot(111)

@@ -429,7 +429,10 @@ class EchemFig():
                 color_idx = count
             
             # Apply notch filter and calculate sampling rate
-            calc_samp_freq = int(1 / np.mean(np.diff(d['t'][count])))
+            try:
+                calc_samp_freq = int(1 / np.mean(np.diff(d['t'][count])))
+            except Exception as e:
+                print(f'Error: Cannot calculate sampling frequency because {e}')
             
             val = self.GUI.apply_notch_filter.get()
             APPLY_NOTCH_FILTER = bool_map.get(val.strip().lower(), False)
@@ -615,7 +618,7 @@ class EchemFig():
             # base_cmap = LinearSegmentedColormap.from_list("style_cycle_interp", default_colors, N=256)
             base_cmap = ListedColormap(default_colors, name="style_cycle_cmap")
         else:
-            base_cmap = cm.get_cmap(color_params[0])
+            base_cmap = mpl.colormaps.get_cmap(color_params[0])
         
         if n_colors == 1:
             cmap = mpl.colors.ListedColormap([base_cmap(0)])

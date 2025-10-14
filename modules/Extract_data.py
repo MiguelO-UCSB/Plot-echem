@@ -12,13 +12,6 @@ Multi_files = False
 Overlay = None
 Integrate = False
 
-SAMPLE_FREQUENCY = 10000
-highest_freq_from_gen = 1000 # Hz
-integrals = []
-
-bool_map = {"true": True, 'True': True,
-            "false": False, 'False': False}
-
 class extract_data():
     def __init__(self):
         return
