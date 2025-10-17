@@ -185,7 +185,7 @@ class GUISetupMethods():
                                
     def MakeEchemFrame(self, frame, ResizeFrame):
         # Track whether we're resizing automatically (window) or manually (entry)
-        self.resize_mode = "manual"  # can be 'auto' or 'manual'
+        self.resize_mode = "auto"  # can be 'auto' or 'manual'
         
         self.fig = plt.Figure(figsize=(4,4), dpi=110)
         self.fig.add_subplot(111)
@@ -319,11 +319,13 @@ class GUISetupMethods():
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
         AxisFrame = Frame(inner_tabs)
+        CyclesFrame = Frame(inner_tabs)
         ShiftsFrame = Frame(inner_tabs)
         ColorbarFrame = Frame(inner_tabs)
         
         inner_tabs.add(AxisFrame, text='  Axis  ')
-        inner_tabs.add(ShiftsFrame, text='  Cycles to Plot & Shifts  ')
+        inner_tabs.add(CyclesFrame, text='  Cycles & Files to Plot  ')
+        inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         inner_tabs.add(ColorbarFrame, text='  Colorbar  ')
         
         '''Axis'''
@@ -358,31 +360,39 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(AxisFrame, text='').grid(row=13, column=0, sticky=(E))
         
-        '''Cycles to Plot & Shifts'''
-        Label(ShiftsFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
-        self.cycles_to_plot = EntryStringVar(ShiftsFrame, 10, 0, 1, (W,E), tab=True,
+        '''Cycles and Files to Plot'''
+        Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
+        self.cycles_to_plot = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ShiftsFrame, text='').grid(row=1, column=0, sticky=(E))
+        Label(CyclesFrame, text='Manual Input: ').grid(row=1, column=0, sticky=(E))
+        self.cycles_to_plot_manual = OptionMenuStringVar(CyclesFrame, Overlay_options, 1, 1, (W,E), idx=1,)
+        Label(CyclesFrame, text='').grid(row=2, column=0, sticky=(E))
         
-        Label(ShiftsFrame, text='X-axis shifts: ').grid(row=2, column=0, sticky=(E))
-        self.x_axis_shifts = EntryStringVar(ShiftsFrame, 10, 2, 1, (W,E), tab=True,
+        Label(CyclesFrame, text='Files to Plot: ').grid(row=3, column=0, sticky=(E))
+        self.files_to_plot = EntryStringVar(CyclesFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ShiftsFrame, text='Y-axis shifts: ').grid(row=2, column=2, sticky=(E))
-        self.y_axis_shifts = EntryStringVar(ShiftsFrame, 10, 2, 3, (W,E), tab=True,
+        Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
+        
+        '''Shifts'''
+        Label(ShiftsFrame, text='X-axis shifts: ').grid(row=3, column=0, sticky=(E))
+        self.x_axis_shifts = EntryStringVar(ShiftsFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ShiftsFrame, text='').grid(row=3, column=0, sticky=(E))
+        Label(ShiftsFrame, text='Y-axis shifts: ').grid(row=3, column=2, sticky=(E))
+        self.y_axis_shifts = EntryStringVar(ShiftsFrame, 10, 3, 3, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(ShiftsFrame, text='').grid(row=4, column=0, sticky=(E))
         
         
-        Label(ShiftsFrame, text='Start After: ').grid(row=4, column=0, sticky=(E))
-        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 4, 1, (W,E), idx=1,)
-        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 5, 0, (E), idx=0)
-        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 5, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='Start After: ').grid(row=5, column=0, sticky=(E))
+        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 5, 1, (W,E), idx=1,)
+        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 6, 0, (E), idx=0)
+        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 6, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(ShiftsFrame, text='End Before: ').grid(row=6, column=0, sticky=(E))
-        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 6, 1, (W,E), idx=1,)
-        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 7, 0, (E), idx=0)
-        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 7, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='End Before: ').grid(row=7, column=0, sticky=(E))
+        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 7, 1, (W,E), idx=1,)
+        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 8, 0, (E), idx=0)
+        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 8, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
         '''Colorbar'''

@@ -329,13 +329,29 @@ class EchemFig():
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
-        legend_labels = self.set_legend_labels(n_colors)
-        
         marker_styles, marker_sizes, line_styles, line_sizes = self.set_line_markers_params(n_colors)
+        
+        try:
+            selected_files = self.parse_selection(self.GUI.files_to_plot.get(), self.file_max)
+        except Exception:
+            selected_files = list(range(self.file_max))
         
         x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors)
         
-        while count < self.NUM_SWEEPS:
+        if Overlay:
+            selected_indices = selected_files  # or however you store it
+        else:
+            selected_indices = cycles_to_plot
+            
+        legend_labels = self.set_legend_labels(n_colors, selected_indices)
+        
+        for count in range(self.NUM_SWEEPS):
+            file_num = getattr(self, "file_num", 0)
+            if file_num not in selected_files:
+                continue
+            if count not in cycles_to_plot:
+                continue
+            
             yvals, xvals = d[ylabel][count], d[xlabel][count]
                 
             if xlabel == 't':
@@ -446,21 +462,25 @@ class EchemFig():
             if skip_sweep:
                 continue
                 
-            if color_idx in cycles_to_plot:
-                # 🟢 Only apply legend once if Overlay=True
-                if Overlay and count > 1:
-                    label = None
-                else:
+            # 🟢 Only apply legend once if Overlay=True
+            # Only add a label once per color index
+            if Overlay:
+                # Label the first occurrence of each color
+                if count % self.NUM_SWEEPS == 0:
                     label = legend_labels[color_idx]
-                    
-                self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
-                             yvals[:len(xvals)] + y_shifts[color_idx],
-                             color=colors[color_idx],
-                             marker = marker_styles[color_idx],
-                             markersize = marker_sizes[color_idx],
-                             linestyle = line_styles[color_idx],
-                             linewidth = line_sizes[color_idx], 
-                             label=label)
+                else:
+                    label = None
+            else:
+                label = legend_labels[color_idx]
+                
+            self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
+                         yvals[:len(xvals)] + y_shifts[color_idx],
+                         color=colors[color_idx],
+                         marker = marker_styles[color_idx],
+                         markersize = marker_sizes[color_idx],
+                         linestyle = line_styles[color_idx],
+                         linewidth = line_sizes[color_idx], 
+                         label=label)
             
         axis_labels = {'t': f'Time ({time_units})', 'V': f'E vs. {ref_label} ({ref_units})', 'I': f'Current ({current_units})'}
         try:
@@ -634,24 +654,16 @@ class EchemFig():
         return sm, colors, cmap
     
     def set_IV_cycles_to_plot_and_shifts(self, n_colors):
-        # --- Get cycles to plot from GUI ---
-        cycles_strs = self.GUI.cycles_to_plot.get().split(',')
-        try:
-            cycles_to_plot = [int(lbl.strip())-1 for lbl in cycles_strs if lbl.strip() != '']
-        except Exception as e:
-            print(f'Error: {e}\nCycles are integers separated by commas\nIgnoring cycles...')
+        # --- Get cycles to plot from GUI or manual from Console ---
+        manual = bool_map.get(self.GUI.cycles_to_plot_manual.get().strip().lower(), False)
         
-        if len(cycles_to_plot)==0:
-            cycles_to_plot = range(0, n_colors)
+        if manual == False:
+            cycles_strs = self.GUI.cycles_to_plot.get()
             
-        # If cycles_to_plot provided, must match colors
-        for num in cycles_to_plot:
-            if num in range(0, n_colors):
-                continue
-            else:
-                print("Warning: Cycles are out of bounds.\nCycles are integers separated by commas\nIgnoring cycles...")
-                cycles_to_plot = range(0, n_colors)
-                break
+        else:
+            cycles_strs = self.GUI.console_input('Input cycles to plot (comma separated)>>\n')
+        
+        cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
             
         # --- Get x shifts from GUI ---
         x_shifts_strs = self.GUI.x_axis_shifts.get().split(',')
@@ -679,18 +691,67 @@ class EchemFig():
         
         return x_shifts, y_shifts, cycles_to_plot
     
-    def set_legend_labels(self, n_colors):
+    def parse_selection(self, selection_str, max_val):
+        """
+        Parse selection strings like '1,3-5' or 'all' into a list of integers.
+        max_val ensures we don’t exceed available indices.
+        """
+        selection_str = selection_str.strip().lower()
+        if selection_str in ('all', ''):
+            return list(range(max_val))
+        
+        result = set()
+        for part in selection_str.split(','):
+            part = part.strip()
+            if '-' in part:
+                start, end = part.split('-')
+                result.update(range(int(start)-1, int(end)))  # zero-indexed
+            else:
+                try:
+                    idx = int(part) - 1
+                    if 0 <= idx < max_val:
+                        result.add(idx)
+                    else:
+                        print(f'{idx} is out of bounds for cycles or files to plot')
+                except ValueError:
+                    print('Error: Cycles and Files are integers separated by commas\nIgnoring...')
+                    pass
+        return sorted(result)
+
+    def set_legend_labels(self, n_colors, selected_indices=None):
+        """
+        Create legend labels based on user input, automatically filling
+        missing positions with numeric placeholders. Works with selective
+        file/cycle plotting.
+    
+        Parameters
+        ----------
+        n_colors : int
+            Total number of color slots (files or cycles)
+        selected_indices : list[int] or None
+            Indices of files/cycles being plotted (0-based)
+        """
         # --- Get labels from GUI ---
         label_strs = self.GUI.labels_for_legend.get().split(',')
-        legend_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
+        user_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
         
-        if len(legend_labels)==0:
-            legend_labels = range(1, n_colors+1)
-            
-        # If labels provided, must match number of colors
-        if len(legend_labels)>0 and len(legend_labels) != n_colors:
-            print("Warning: Number of labels does not match number of colors.\nLabels are separated by commas\nIgnoring labels...")
-            legend_labels = range(1, n_colors+1)
+        # Default selected indices if not provided
+        if selected_indices is None:
+            selected_indices = list(range(n_colors))
+    
+        # Initialize all as numbered labels
+        legend_labels = [str(i + 1) for i in range(n_colors)]
+        
+        # --- Fill only selected indices with user labels ---
+        if len(user_labels) > 0:
+            if len(user_labels) > len(selected_indices):
+                # print(f"Warning: {len(user_labels)} labels provided but only {len(selected_indices)} items plotted. Extra labels ignored.")
+                user_labels = user_labels[:len(selected_indices)]
+    
+            # Map each user label to the selected index position
+            for idx, user_label in zip(selected_indices, user_labels):
+                if 0 <= idx < n_colors:
+                    legend_labels[idx] = user_label
         
         return legend_labels
             
@@ -898,7 +959,7 @@ class EchemFig():
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
-        legend_labels = self.set_legend_labels(n_colors)
+        legend_labels = self.set_legend_labels(n_colors, None)
         
         marker_styles, marker_sizes, line_styles, line_sizes = self.set_line_markers_params(n_colors)
         
@@ -959,7 +1020,7 @@ class EchemFig():
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
-        legend_labels = self.set_legend_labels(n_colors)
+        legend_labels = self.set_legend_labels(n_colors, None)
         
         marker_styles, marker_sizes, line_styles, line_sizes = self.set_line_markers_params(n_colors) 
         
