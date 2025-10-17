@@ -77,11 +77,7 @@ cmaps = ['viridis', 'hot', 'gist_gray', 'afmhot', 'plasma', 'inferno',
          'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu',
          'RdYlGn', 'coolwarm', 'bwr']
 
-linestyle_str = ['solid', 'None', 'dotted', 'dashed', 'dashdot',
-                 'loosely dotted', 'densely dotted', 'long dash with offset',
-                 'loosely dashed', 'densely dashed',
-                 'loosely dashdotted', 'dashdotted', 'densely dashdotted',
-                 'dashdotdotted', 'loosely dashdotdotted', 'densely dashdotdotted']
+linestyle_str = ['solid', 'None', 'dotted', 'dashed', 'dashdot']
 
 marker_str = ["None", ".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s",
               "p", "P", "*", "h", "H", "+", "x", "X", "D", "d", "|", "_", 0, 1, 2, 3]
@@ -535,18 +531,19 @@ class GUISetupMethods():
                                                   bind_key='<Return>', bind_func=
                                                   self.EchemFig.update_colormap(),
                                                   default='1')
-        Label(ColorFrame, text='').grid(row=3, column=0, sticky=(E))
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
         inner_tabs.grid(row=1, column=0, sticky=(N,S,E,W), pady=10)
+        inner_tabs2 = Notebook(frame)
+        inner_tabs2.grid(row=2, column=0, sticky=(N,S,E,W), pady=10)
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
         LSMSFrame = Frame(inner_tabs)
-        LegendFrame = Frame(inner_tabs)
+        LegendFrame = Frame(inner_tabs2)
         
         inner_tabs.add(LSMSFrame, text='  Linestyle and Makers  ')
-        inner_tabs.add(LegendFrame, text='  Legend  ')
+        inner_tabs2.add(LegendFrame, text='  Legend  ')
         
         '''Legend'''
         Label(LegendFrame, text='Legend: ').grid(row=0, column=0, sticky=(E))
