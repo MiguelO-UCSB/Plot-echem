@@ -461,16 +461,19 @@ class EchemFig():
             # ✅ final check outside try/except to control plotting
             if skip_sweep:
                 continue
-                
-            # 🟢 Only apply legend once if Overlay=True
-            # Only add a label once per color index
+            
+            labeled_colors = set()
+            # --- Determine label for this plotted line ---
             if Overlay:
-                # Label the first occurrence of each color
-                if count % self.NUM_SWEEPS == 0:
+                # Only label the first time each color is used
+                # E.g. each file once
+                if color_idx not in labeled_colors:
                     label = legend_labels[color_idx]
+                    labeled_colors.add(color_idx)
                 else:
                     label = None
             else:
+                # Each cycle gets its own label
                 label = legend_labels[color_idx]
                 
             self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
@@ -735,23 +738,28 @@ class EchemFig():
         label_strs = self.GUI.labels_for_legend.get().split(',')
         user_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
         
-        # Default selected indices if not provided
-        if selected_indices is None:
-            selected_indices = list(range(n_colors))
-    
-        # Initialize all as numbered labels
+        # Start with default numeric labels
         legend_labels = [str(i + 1) for i in range(n_colors)]
         
-        # --- Fill only selected indices with user labels ---
-        if len(user_labels) > 0:
-            if len(user_labels) > len(selected_indices):
-                # print(f"Warning: {len(user_labels)} labels provided but only {len(selected_indices)} items plotted. Extra labels ignored.")
-                user_labels = user_labels[:len(selected_indices)]
+        if not user_labels:
+            # No user labels given → just use numbers
+            return legend_labels
     
-            # Map each user label to the selected index position
-            for idx, user_label in zip(selected_indices, user_labels):
-                if 0 <= idx < n_colors:
-                    legend_labels[idx] = user_label
+        # --- Match user labels to selected indices ---
+        if len(user_labels) > len(selected_indices):
+            # Too many labels, ignore extras
+            # print(f"Warning: {len(user_labels)} labels provided but only {len(selected_indices)} plotted. Extra labels ignored.")
+            user_labels = user_labels[:len(selected_indices)]
+        elif len(user_labels) < len(selected_indices):
+            # Too few labels, fill the remaining with numbers
+            # e.g. user_labels = ['A', 'B'], selected_indices=[0,2,4]
+            fill_count = len(selected_indices) - len(user_labels)
+            user_labels += [str(i + 1) for i in range(len(user_labels), len(user_labels) + fill_count)]
+        
+        # Map labels to the correct selected indices
+        for idx, user_label in zip(selected_indices, user_labels):
+            if 0 <= idx < n_colors:
+                legend_labels[idx] = user_label
         
         return legend_labels
             
@@ -989,15 +997,18 @@ class EchemFig():
             else:
                 color_idx = count
             
-            # 🟢 Only apply legend once if Overlay=True
-            # Only add a label once per color index
+            labeled_colors = set()
+            # --- Determine label for this plotted line ---
             if Overlay:
-                # Label the first occurrence of each color
-                if count % self.NUM_SWEEPS == 0:
+                # Only label the first time each color is used
+                # E.g. each file once
+                if color_idx not in labeled_colors:
                     label = legend_labels[color_idx]
+                    labeled_colors.add(color_idx)
                 else:
                     label = None
             else:
+                # Each cycle gets its own label
                 label = legend_labels[color_idx]
                 
             self.ax.plot(self.real_Z[count]/units  + x_shifts[color_idx],
@@ -1077,15 +1088,18 @@ class EchemFig():
             else:
                 color_idx = count
             
-            # 🟢 Only apply legend once if Overlay=True
-            # Only add a label once per color index
+            labeled_colors = set()
+            # --- Determine label for this plotted line ---
             if Overlay:
-                # Label the first occurrence of each color
-                if count % self.NUM_SWEEPS == 0:
+                # Only label the first time each color is used
+                # E.g. each file once
+                if color_idx not in labeled_colors:
                     label = legend_labels[color_idx]
+                    labeled_colors.add(color_idx)
                 else:
                     label = None
             else:
+                # Each cycle gets its own label
                 label = legend_labels[color_idx]
                 
             if option == 'Z':
