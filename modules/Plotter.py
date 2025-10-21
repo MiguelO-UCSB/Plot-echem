@@ -266,7 +266,7 @@ class EchemFig():
                 self.set_params_IV()
                 
             if self.extracted_data[file][-1] == 'EIS':
-                self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.file_num, self.file_type = self.extracted_data[file]
+                self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.NUM_SWEEPS, self.file_num, self.file_type = self.extracted_data[file]
                 self.set_params_EIS()
         
         print('Plot updated')
@@ -339,7 +339,7 @@ class EchemFig():
         x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors)
         
         if Overlay:
-            selected_indices = selected_files  # or however you store it
+            selected_indices = selected_files
         else:
             selected_indices = cycles_to_plot
             
@@ -959,19 +959,46 @@ class EchemFig():
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
-        legend_labels = self.set_legend_labels(n_colors, None)
-        
         marker_styles, marker_sizes, line_styles, line_sizes = self.set_line_markers_params(n_colors)
         
-        x_shifts, y_shifts = self.set_EIS_shifts(n_colors)
+        try:
+            selected_files = self.parse_selection(self.GUI.files_to_plot_EIS.get(), self.file_max)
+        except Exception:
+            selected_files = list(range(self.file_max))
+            
+        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(n_colors)
         
+        if Overlay:
+            selected_indices = selected_files
+        else:
+            selected_indices = cycles_to_plot
+            
         units = Impedance_units_conv[impedance_units]
         
-        while count < self.NUM_SWEEPS:
+        legend_labels = self.set_legend_labels(n_colors, selected_indices)
+        
+        for count in range(self.NUM_SWEEPS):
+            file_num = getattr(self, "file_num", 0)
+            if file_num not in selected_files:
+                continue
+            if count not in cycles_to_plot:
+                continue
+            
             if Overlay:
                 color_idx = self.file_num
             else:
                 color_idx = count
+            
+            # 🟢 Only apply legend once if Overlay=True
+            # Only add a label once per color index
+            if Overlay:
+                # Label the first occurrence of each color
+                if count % self.NUM_SWEEPS == 0:
+                    label = legend_labels[color_idx]
+                else:
+                    label = None
+            else:
+                label = legend_labels[color_idx]
                 
             self.ax.plot(self.real_Z[count]/units  + x_shifts[color_idx],
                          self.imag_Z[count]/units  + y_shifts[color_idx],
@@ -980,7 +1007,7 @@ class EchemFig():
                          markersize = marker_sizes[color_idx],
                          linestyle = line_styles[color_idx],
                          linewidth = line_sizes[color_idx], 
-                         label = legend_labels[color_idx])
+                         label = label)
             count += 1
             
         try:
@@ -1020,20 +1047,47 @@ class EchemFig():
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
-        legend_labels = self.set_legend_labels(n_colors, None)
-        
         marker_styles, marker_sizes, line_styles, line_sizes = self.set_line_markers_params(n_colors) 
         
-        x_shifts, y_shifts = self.set_EIS_shifts(n_colors)
-
-        units = Impedance_units_conv[impedance_units]
+        try:
+            selected_files = self.parse_selection(self.GUI.files_to_plot_EIS.get(), self.file_max)
+        except Exception:
+            selected_files = list(range(self.file_max))
             
-        while count < self.NUM_SWEEPS:
+        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(n_colors)
+        
+        if Overlay:
+            selected_indices = selected_files
+        else:
+            selected_indices = cycles_to_plot
+            
+        units = Impedance_units_conv[impedance_units]
+        
+        legend_labels = self.set_legend_labels(n_colors, selected_indices)
+        
+        for count in range(self.NUM_SWEEPS):
+            file_num = getattr(self, "file_num", 0)
+            if file_num not in selected_files:
+                continue
+            if count not in cycles_to_plot:
+                continue
+            
             if Overlay:
                 color_idx = self.file_num
             else:
                 color_idx = count
             
+            # 🟢 Only apply legend once if Overlay=True
+            # Only add a label once per color index
+            if Overlay:
+                # Label the first occurrence of each color
+                if count % self.NUM_SWEEPS == 0:
+                    label = legend_labels[color_idx]
+                else:
+                    label = None
+            else:
+                label = legend_labels[color_idx]
+                
             if option == 'Z':
                 self.ax.plot(self.freq[count]  + x_shifts[color_idx],
                              np.log10(self.abs_Z[count])/units + y_shifts[color_idx],
@@ -1042,7 +1096,7 @@ class EchemFig():
                              markersize = marker_sizes[color_idx],
                              linestyle = line_styles[color_idx],
                              linewidth = line_sizes[color_idx], 
-                             label=legend_labels[color_idx])
+                             label = label)
                 ylabel = f'log(|Z|) ({impedance_units})'
                 
             elif option == 'Phase':
@@ -1053,7 +1107,7 @@ class EchemFig():
                              markersize = marker_sizes[color_idx],
                              linestyle = line_styles[color_idx],
                              linewidth = line_sizes[color_idx], 
-                             label=legend_labels[color_idx])
+                             label = label)
                 ylabel = r'Phase ($\degree$)'
             
             count += 1
@@ -1179,6 +1233,17 @@ class EchemFig():
         self.original_ylim = self.ax.get_ylim()
     
     def set_EIS_shifts(self, n_colors):
+        # --- Get cycles to plot from GUI or manual from Console ---
+        manual = bool_map.get(self.GUI.cycles_to_plot_manual_EIS.get().strip().lower(), False)
+        
+        if manual == False:
+            cycles_strs = self.GUI.cycles_to_plot_EIS.get()
+            
+        else:
+            cycles_strs = self.GUI.console_input('Input cycles to plot (comma separated)>>\n')
+        
+        cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
+        
         # --- Get x shifts from GUI ---
         x_shifts_strs = self.GUI.x_axis_shifts_EIS.get().split(',')
         x_shifts = [float(lbl.strip()) for lbl in x_shifts_strs if lbl.strip() != '']
@@ -1203,7 +1268,7 @@ class EchemFig():
             print("Warning: Number of y shifts does not match number of colors.\nShifts are separated by commas\nIgnoring shifts...")
             y_shifts = [0 for _ in range(n_colors)]
         
-        return x_shifts, y_shifts
+        return x_shifts, y_shifts, cycles_to_plot
     
     def clear_artists(self):
         '''

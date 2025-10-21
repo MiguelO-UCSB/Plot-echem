@@ -445,9 +445,11 @@ class GUISetupMethods():
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
         AxisFrame = Frame(inner_tabs)
+        CyclesFrame = Frame(inner_tabs)
         ShiftsFrame = Frame(inner_tabs)
         
         inner_tabs.add(AxisFrame, text='  Axis  ')
+        inner_tabs.add(CyclesFrame, text='  Cycles & Files to Plot  ')
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         
         '''Axis'''
@@ -481,6 +483,19 @@ class GUISetupMethods():
         self.echem_ymaxval_EIS = EntryStringVar(AxisFrame, 10, 12, 4, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         Label(frame, text='').grid(row=13, column=0, sticky=(E))
+        
+        '''Cycles and Files to Plot'''
+        Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
+        self.cycles_to_plot_EIS = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(CyclesFrame, text='Manual Input: ').grid(row=1, column=0, sticky=(E))
+        self.cycles_to_plot_manual_EIS = OptionMenuStringVar(CyclesFrame, Overlay_options, 1, 1, (W,E), idx=1,)
+        Label(CyclesFrame, text='').grid(row=2, column=0, sticky=(E))
+        
+        Label(CyclesFrame, text='Files to Plot: ').grid(row=3, column=0, sticky=(E))
+        self.files_to_plot_EIS = EntryStringVar(CyclesFrame, 10, 3, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
         
         '''Shifts'''
         Label(ShiftsFrame, text='X-axis shifts: ').grid(row=0, column=0, sticky=(E))

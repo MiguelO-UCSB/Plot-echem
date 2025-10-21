@@ -1,7 +1,9 @@
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
+from PIL import Image, ImageTk
 import matplotlib
+import os
 from matplotlib import pyplot as plt, cm, ticker as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy import signal
@@ -30,7 +32,6 @@ class Make_Popup_GUI_Figure():
         # self.ax_signal = self.fig2.add_subplot(211)
         self.ax_fft = self.fig2.add_subplot(111)
         self.make_popup()
-        self.fill_leftframe()
         
     def make_popup(self):
         self.popup = Toplevel()
@@ -41,9 +42,6 @@ class Make_Popup_GUI_Figure():
         self.rightframe.grid(row=0, column=1)
         self.canvas = FigureCanvasTkAgg(self.fig2, master=self.rightframe)
         self.canvas.get_tk_widget().grid(row=0, column=0)
-        
-    def fill_leftframe(self):
-        pass
     
     def draw(self):
         pass
@@ -60,212 +58,6 @@ class Make_Popup_GUI_Figure():
         
         self.fig2.savefig(path, transparent = transparency, dpi=dpi_val, format=export_format)
         print(f'Plot exported as {export_format}')
-    
-    
-class Make_Popup_GUI():
-    
-    def __init__(self, GUI):
-        self.GUI = GUI
-        self.make_popup()
-        
-        # --- Data: Potentials vs. NHE at 25 °C in Volts ---
-        # These are the standard values used for conversion.
-        self.REF_POTENTIALS = {
-            "NHE (Normal Hydrogen Electrode)": 0.0000,
-            "SHE (Standard Hydrogen Electrode)": 0.0000,
-            "SCE (Saturated Calomel Electrode)": 0.2412,
-            "Calomel (0.1 M KCl)": 0.3337,
-            "Calomel (1.0 M KCl)": 0.2801,
-            "Ag/AgCl (Saturated KCl)": 0.197,
-            "Ag/AgCl (0.1 M KCl)": 0.2881,
-            "Ag/AgCl (1.0 M KCl)": 0.235,
-            "Hg/Hg₂SO₄ (Saturated K₂SO₄)": 0.640,
-            "Hg/HgO (0.1 M NaOH)": 0.149,
-            "Hg/HgO (1.0 M NaOH)": 0.108,
-            "Fc/Fc⁺ (Ferrocene/Ferrocenium in MeCN)": 0.640
-        }
-        
-        self.REF_POTENTIALS_RHE = {
-            "SHE (Standard Hydrogen Electrode)": 0,
-            "RHE (Reversible Hydrogen Electrode)": 0}
-
-        # --- Tkinter String Variables ---
-        # These variables are linked to widgets to get/set their values easily.
-        if not hasattr(self, 'input_potential_var'):
-            # Will already have these attributes if it's being reinitialized
-            self.input_potential_var = StringVar(value='0')
-            self.input_potential_var_RHE = StringVar(value='0')
-            self.temperature = StringVar(value='298')
-            self.pH = StringVar(value='1')
-            
-        self.input_ref_var = StringVar()
-        self.input_ref_var_RHE = StringVar()
-        
-        # Create a dictionary of StringVars for each output label
-        self.output_vars = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS}
-        self.output_vars_RHE = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS_RHE}
-
-        # Set a default value for the dropdown menu
-        self.input_ref_var.set(list(self.REF_POTENTIALS.keys())[2]) # Default to SCE
-        self.input_ref_var_RHE.set(list(self.REF_POTENTIALS_RHE.keys())[0]) # Default to SCE
-        
-        self.fill_leftframe()
-        self.fill_rightframe()
-        
-    def make_popup(self):
-        self.popup = Toplevel()
-        self.popup.title("Reference Electrode Converter")
-        self.leftframe  = Frame(self.popup)
-        self.rightframe = Frame(self.popup)
-        self.leftframe.grid(row=0, column=0)
-        self.rightframe.grid(row=0, column=1)
-        
-        
-    def fill_leftframe(self):
-        pass
-    
-    def fill_rightframe(self):
-        pass
-
-
-class ReferenceElecConvPopup(Make_Popup_GUI):
-    
-    def __init__(self, GUI):
-        super().__init__(GUI=GUI)
-    
-    def fill_leftframe(self):
-        # Put relevant buttons in self.leftframe
-        frame = self.leftframe
-        
-        # --- Input Section ---
-        input_frame = LabelFrame(frame, text="Input", padding="10")
-        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        input_frame.grid_columnconfigure(1, weight=1)
-
-        Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        potential_entry = Entry(input_frame, textvariable=self.input_potential_var)
-        potential_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        Label(input_frame, text="Reference:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        ref_dropdown = OptionMenu(input_frame, self.input_ref_var, self.input_ref_var.get(), *self.REF_POTENTIALS.keys())
-        ref_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        # --- Convert Button ---
-        convert_button = Button(frame, text="Convert", command=self.convert_potentials)
-        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
-
-        # --- Output Section ---
-        output_frame = LabelFrame(frame, text="Converted Potentials", padding="10")
-        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
-        output_frame.grid_columnconfigure(1, weight=1)
-        
-        # Dynamically create labels for each reference electrode
-        for i, name in enumerate(self.REF_POTENTIALS.keys()):
-            Label(output_frame, text=f"{name}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
-            Label(output_frame, textvariable=self.output_vars[name], font=("Calibri", 14)).grid(row=i, column=1, padx=5, pady=2, sticky="w")
-        return
-        
-    def convert_potentials(self):
-        """The core logic for the conversion."""
-        try:
-            # 1. Get the user's input potential as a number
-            input_potential = float(self.input_potential_var.get())
-            
-            # 2. Get the name of the user's reference electrode
-            input_ref_name = self.input_ref_var.get()
-            
-            # 3. Get the potential of the user's reference vs. NHE
-            ref_potential_vs_nhe = self.REF_POTENTIALS[input_ref_name]
-
-            # 4. Convert the input potential to the NHE scale
-            # E_vs_NHE = E_vs_Ref + E_Ref_vs_NHE
-            potential_vs_nhe = input_potential + ref_potential_vs_nhe
-
-            # 5. Convert from NHE to all other reference scales and update the labels
-            # E_vs_NewRef = E_vs_NHE - E_NewRef_vs_NHE
-            for name, value_vs_nhe in self.REF_POTENTIALS.items():
-                converted_value = potential_vs_nhe - value_vs_nhe
-                self.output_vars[name].set(f"{converted_value:.4f} V") # Format to 4 decimal places
-        
-        except ValueError:
-            # Handle cases where the input is not a valid number
-            for name in self.REF_POTENTIALS:
-                self.output_vars[name].set("Invalid Input")
-        except Exception as e:
-            # Handle any other unexpected errors
-            print(f"An error occurred: {e}")
-            for name in self.REF_POTENTIALS:
-                self.output_vars[name].set("Error")
-    
-    def fill_rightframe(self):
-        # Put relevant buttons in self.leftframe
-        frame = self.rightframe
-        
-        # --- Input Section ---
-        input_frame = LabelFrame(frame, text="Input", padding="10")
-        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        input_frame.grid_columnconfigure(1, weight=1)
-
-        Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        potential_entry = Entry(input_frame, textvariable=self.input_potential_var_RHE)
-        potential_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-        Label(input_frame, text="Reference:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        ref_dropdown = OptionMenu(input_frame, self.input_ref_var_RHE, self.input_ref_var_RHE.get(), *self.REF_POTENTIALS_RHE.keys())
-        ref_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-        
-        Label(input_frame, text="Temperature (K):").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        potential_entry = Entry(input_frame, textvariable=self.temperature)
-        potential_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        
-        Label(input_frame, text="pH:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        potential_entry = Entry(input_frame, textvariable=self.pH)
-        potential_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
-
-        # --- Convert Button ---
-        convert_button = Button(frame, text="Convert", command=self.convert_RHE_potentials)
-        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
-
-        # --- Output Section ---
-        output_frame = LabelFrame(frame, text="Converted Potential", padding="10")
-        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
-        output_frame.grid_columnconfigure(1, weight=1)
-        
-        for i, name in enumerate(self.REF_POTENTIALS_RHE.keys()):
-            Label(output_frame, text=f"{name}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
-            Label(output_frame, textvariable=self.output_vars_RHE[name], font=("Calibri", 14)).grid(row=i, column=1, padx=5, pady=2, sticky="w")
-        return
-    
-    def convert_RHE_potentials(self):
-        """The core logic for the conversion."""
-        try:
-            # 1. Get the user's input potential as a number
-            input_potential = float(self.input_potential_var_RHE.get())
-            
-            # 2. Get the name of the user's reference electrode and other params
-            input_ref_name = self.input_ref_var_RHE.get()
-            pH_ = float(self.pH.get())
-            temp = float(self.temperature.get())
-            
-            if input_ref_name == "SHE (Standard Hydrogen Electrode)":
-                converted_value = input_potential + np.log(10)*8.31446261815324*temp*pH_/96485.33128
-                self.output_vars_RHE["SHE (Standard Hydrogen Electrode)"].set(f"{input_potential:.4f} V") # Format to 4 decimal places
-                self.output_vars_RHE["RHE (Reversible Hydrogen Electrode)"].set(f"{converted_value:.4f} V") # Format to 4 decimal places
-                
-            if input_ref_name == "RHE (Reversible Hydrogen Electrode)":
-                converted_value = input_potential - np.log(10)*8.31446261815324*temp*pH_/96485.33128
-                self.output_vars_RHE["RHE (Reversible Hydrogen Electrode)"].set(f"{input_potential:.4f} V") # Format to 4 decimal places
-                self.output_vars_RHE["SHE (Standard Hydrogen Electrode)"].set(f"{converted_value:.4f} V") # Format to 4 decimal places
-                
-        except ValueError:
-            # Handle cases where the input is not a valid number
-            for name in self.REF_POTENTIALS_RHE:
-                self.output_vars_RHE[name].set("Invalid Input")
-        except Exception as e:
-            # Handle any other unexpected errors
-            print(f"An error occurred: {e}")
-            for name in self.REF_POTENTIALS_RHE:
-                self.output_vars_RHE[name].set("Error")
 
 class FTdataPopup(Make_Popup_GUI_Figure):
     
@@ -573,7 +365,265 @@ class FTdataPopup(Make_Popup_GUI_Figure):
             self.ax_fft.text(freqs_fil[deduped][i]+1, abs(ft_V_fil)[deduped][i],
                              f'{round(freqs_fil[deduped][i], 2)} Hz',
                              ha='left', size=12, rotation='horizontal')
+    
+class Make_Popup_GUI():
+    
+    def __init__(self, GUI):
+        self.GUI = GUI
+        self.make_popup()
         
+        # --- Data: Potentials vs. NHE at 25 °C in Volts ---
+        # These are the standard values used for conversion.
+        self.REF_POTENTIALS = {
+            "NHE (Normal Hydrogen Electrode)": 0.0000,
+            "SHE (Standard Hydrogen Electrode)": 0.0000,
+            "SCE (Saturated Calomel Electrode)": 0.2412,
+            "Calomel (0.1 M KCl)": 0.3337,
+            "Calomel (1.0 M KCl)": 0.2801,
+            "Ag/AgCl (Saturated KCl)": 0.197,
+            "Ag/AgCl (0.1 M KCl)": 0.2881,
+            "Ag/AgCl (1.0 M KCl)": 0.235,
+            "Hg/Hg₂SO₄ (Saturated K₂SO₄)": 0.640,
+            "Hg/HgO (0.1 M NaOH)": 0.149,
+            "Hg/HgO (1.0 M NaOH)": 0.108,
+            "Fc/Fc⁺ (Ferrocene/Ferrocenium in MeCN)": 0.640
+        }
+        
+        self.REF_POTENTIALS_RHE = {
+            "SHE (Standard Hydrogen Electrode)": 0,
+            "RHE (Reversible Hydrogen Electrode)": 0}
+
+        # --- Tkinter String Variables ---
+        # These variables are linked to widgets to get/set their values easily.
+        if not hasattr(self, 'input_potential_var'):
+            # Will already have these attributes if it's being reinitialized
+            self.input_potential_var = StringVar(value='0')
+            self.input_potential_var_RHE = StringVar(value='0')
+            self.temperature = StringVar(value='298')
+            self.pH = StringVar(value='1')
+            
+        self.input_ref_var = StringVar()
+        self.input_ref_var_RHE = StringVar()
+        
+        # Create a dictionary of StringVars for each output label
+        self.output_vars = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS}
+        self.output_vars_RHE = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS_RHE}
+
+        # Set a default value for the dropdown menu
+        self.input_ref_var.set(list(self.REF_POTENTIALS.keys())[2]) # Default to SCE
+        self.input_ref_var_RHE.set(list(self.REF_POTENTIALS_RHE.keys())[0]) # Default to SCE
+        
+        self.fill_leftframe()
+        self.fill_rightframe()
+        
+    def make_popup(self):
+        self.popup = Toplevel()
+        self.popup.title("Reference Electrode Converter")
+        self.leftframe  = Frame(self.popup)
+        self.rightframe = Frame(self.popup)
+        self.leftframe.grid(row=0, column=0)
+        self.rightframe.grid(row=0, column=1)
+        
+        
+    def fill_leftframe(self):
+        pass
+    
+    def fill_rightframe(self):
+        pass
+
+
+class ReferenceElecConvPopup(Make_Popup_GUI):
+    
+    def __init__(self, GUI):
+        super().__init__(GUI=GUI)
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe
+        
+        # --- Input Section ---
+        input_frame = LabelFrame(frame, text="Input", padding="10")
+        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(1, weight=1)
+
+        Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        potential_entry = Entry(input_frame, textvariable=self.input_potential_var)
+        potential_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        Label(input_frame, text="Reference:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ref_dropdown = OptionMenu(input_frame, self.input_ref_var, self.input_ref_var.get(), *self.REF_POTENTIALS.keys())
+        ref_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        # --- Convert Button ---
+        convert_button = Button(frame, text="Convert", command=self.convert_potentials)
+        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+
+        # --- Output Section ---
+        output_frame = LabelFrame(frame, text="Converted Potentials", padding="10")
+        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
+        output_frame.grid_columnconfigure(1, weight=1)
+        
+        # Dynamically create labels for each reference electrode
+        for i, name in enumerate(self.REF_POTENTIALS.keys()):
+            Label(output_frame, text=f"{name}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            Label(output_frame, textvariable=self.output_vars[name], font=("Calibri", 14)).grid(row=i, column=1, padx=5, pady=2, sticky="w")
+        return
+        
+    def convert_potentials(self):
+        """The core logic for the conversion."""
+        try:
+            # 1. Get the user's input potential as a number
+            input_potential = float(self.input_potential_var.get())
+            
+            # 2. Get the name of the user's reference electrode
+            input_ref_name = self.input_ref_var.get()
+            
+            # 3. Get the potential of the user's reference vs. NHE
+            ref_potential_vs_nhe = self.REF_POTENTIALS[input_ref_name]
+
+            # 4. Convert the input potential to the NHE scale
+            # E_vs_NHE = E_vs_Ref + E_Ref_vs_NHE
+            potential_vs_nhe = input_potential + ref_potential_vs_nhe
+
+            # 5. Convert from NHE to all other reference scales and update the labels
+            # E_vs_NewRef = E_vs_NHE - E_NewRef_vs_NHE
+            for name, value_vs_nhe in self.REF_POTENTIALS.items():
+                converted_value = potential_vs_nhe - value_vs_nhe
+                self.output_vars[name].set(f"{converted_value:.4f} V") # Format to 4 decimal places
+        
+        except ValueError:
+            # Handle cases where the input is not a valid number
+            for name in self.REF_POTENTIALS:
+                self.output_vars[name].set("Invalid Input")
+        except Exception as e:
+            # Handle any other unexpected errors
+            print(f"An error occurred: {e}")
+            for name in self.REF_POTENTIALS:
+                self.output_vars[name].set("Error")
+    
+    def fill_rightframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.rightframe
+        
+        # --- Input Section ---
+        input_frame = LabelFrame(frame, text="Input", padding="10")
+        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(1, weight=1)
+
+        Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        potential_entry = Entry(input_frame, textvariable=self.input_potential_var_RHE)
+        potential_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        Label(input_frame, text="Reference:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ref_dropdown = OptionMenu(input_frame, self.input_ref_var_RHE, self.input_ref_var_RHE.get(), *self.REF_POTENTIALS_RHE.keys())
+        ref_dropdown.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        
+        Label(input_frame, text="Temperature (K):").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        potential_entry = Entry(input_frame, textvariable=self.temperature)
+        potential_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        
+        Label(input_frame, text="pH:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        potential_entry = Entry(input_frame, textvariable=self.pH)
+        potential_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+
+        # --- Convert Button ---
+        convert_button = Button(frame, text="Convert", command=self.convert_RHE_potentials)
+        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+
+        # --- Output Section ---
+        output_frame = LabelFrame(frame, text="Converted Potential", padding="10")
+        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
+        output_frame.grid_columnconfigure(1, weight=1)
+        
+        for i, name in enumerate(self.REF_POTENTIALS_RHE.keys()):
+            Label(output_frame, text=f"{name}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            Label(output_frame, textvariable=self.output_vars_RHE[name], font=("Calibri", 14)).grid(row=i, column=1, padx=5, pady=2, sticky="w")
+        return
+    
+    def convert_RHE_potentials(self):
+        """The core logic for the conversion."""
+        try:
+            # 1. Get the user's input potential as a number
+            input_potential = float(self.input_potential_var_RHE.get())
+            
+            # 2. Get the name of the user's reference electrode and other params
+            input_ref_name = self.input_ref_var_RHE.get()
+            pH_ = float(self.pH.get())
+            temp = float(self.temperature.get())
+            
+            if input_ref_name == "SHE (Standard Hydrogen Electrode)":
+                converted_value = input_potential + np.log(10)*8.31446261815324*temp*pH_/96485.33128
+                self.output_vars_RHE["SHE (Standard Hydrogen Electrode)"].set(f"{input_potential:.4f} V") # Format to 4 decimal places
+                self.output_vars_RHE["RHE (Reversible Hydrogen Electrode)"].set(f"{converted_value:.4f} V") # Format to 4 decimal places
+                
+            if input_ref_name == "RHE (Reversible Hydrogen Electrode)":
+                converted_value = input_potential - np.log(10)*8.31446261815324*temp*pH_/96485.33128
+                self.output_vars_RHE["RHE (Reversible Hydrogen Electrode)"].set(f"{input_potential:.4f} V") # Format to 4 decimal places
+                self.output_vars_RHE["SHE (Standard Hydrogen Electrode)"].set(f"{converted_value:.4f} V") # Format to 4 decimal places
+                
+        except ValueError:
+            # Handle cases where the input is not a valid number
+            for name in self.REF_POTENTIALS_RHE:
+                self.output_vars_RHE[name].set("Invalid Input")
+        except Exception as e:
+            # Handle any other unexpected errors
+            print(f"An error occurred: {e}")
+            for name in self.REF_POTENTIALS_RHE:
+                self.output_vars_RHE[name].set("Error")
+
+class Make_Popup_GUI_macro():
+    
+    def __init__(self, GUI):
+        self.GUI = GUI
+        self.make_popup()
+        
+        # --- Tkinter String Variables ---
+        # These variables are linked to widgets to get/set their values easily.
+        if not hasattr(self, 'input_potential_var'):
+            # Will already have these attributes if it's being reinitialized
+            self.input_potential_var = StringVar(value='0')
+        
+        self.fill_leftframe()
+        
+    def make_popup(self):
+        self.popup = Toplevel()
+        self.popup.title("Macroelectrode Randles–Ševčík Calculator")
+        self.leftframe  = Frame(self.popup)
+        self.rightframe = Frame(self.popup)
+        self.leftframe.grid(row=0, column=0)
+        self.rightframe.grid(row=0, column=1)
+    
+class MacroRSPopup(Make_Popup_GUI_macro):
+    
+    def __init__(self, GUI):
+        super().__init__(GUI=GUI)
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe
+        
+        # --- Input Section ---
+        input_frame = LabelFrame(frame, text="Input", padding="10")
+        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(1, weight=1)
+        
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        macro_path = os.path.join(script_dir, "Images", "Rev_macro.png")
+        
+        try:
+            image = Image.open(macro_path)
+            image.load()  # force decode
+            image = image.convert("RGBA")
+        
+            self.photo_image = ImageTk.PhotoImage(image)
+            image_label = Label(input_frame, image=self.photo_image)
+            image_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        
+        except Exception as e:
+            print("Failed to load image:", e)
+        
+        return
+    
 class Popup_Generator():
     '''
     Class to run reference electrode converter
@@ -582,6 +632,7 @@ class Popup_Generator():
     def __init__(self):
         self.ReferenceElecConvPopup = None
         self.FTdataPopup = None
+        self.MacroRSPopup = None
     
     def get(self, GUI, popup_type, data):
         '''
@@ -601,4 +652,12 @@ class Popup_Generator():
                 return self.FTdataPopup.__init__(GUI, data)
             # print('Test First Open')
             self.FTdataPopup = FTdataPopup(GUI, data)
+            return
+        
+        if popup_type == 'Macro_RS':
+            if self.MacroRSPopup:
+                # print('Test Reload')
+                return self.MacroRSPopup.__init__(GUI)
+            # print('Test First Open')
+            self.MacroRSPopup = MacroRSPopup(GUI)
             return
