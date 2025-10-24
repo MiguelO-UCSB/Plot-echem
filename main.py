@@ -92,12 +92,12 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         menu_file.add_command(label='Open folder', command=self.openFolder)
         menu_file.add_command(label='Open one file...', command=self.openFile)
         menu_file.add_command(label='Open MPL Style', command=self.openStyleFile)
-        menu_file.add_command(label='Export Plot', command=self.save)
+        menu_file.add_command(label='Save Plot', command=self.save)
         
         menu_fun = Menu(menubar)
         menubar.add_cascade(menu=menu_fun, label='Extra Tools')
         menu_fun.add_command(label='Open Reference Electrode Converter', command=self.ref_converter)
-        menu_fun.add_command(label='Open Macro R-S', command=self.macro_RS)
+        menu_fun.add_command(label='Open Macrodisk RS Calculator', command=self.macro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
         
         ### SET UP FRAMES ###

@@ -587,7 +587,7 @@ class Make_Popup_GUI_macro():
         
     def make_popup(self):
         self.popup = Toplevel()
-        self.popup.title("Macroelectrode Randles–Ševčík Calculator")
+        self.popup.title("Macrodisk Randles–Ševčík Calculator")
         self.leftframe  = Frame(self.popup)
         self.rightframe = Frame(self.popup)
         self.leftframe.grid(row=0, column=0)
@@ -602,25 +602,34 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         # Put relevant buttons in self.leftframe
         frame = self.leftframe
         
-        # --- Input Section ---
-        input_frame = LabelFrame(frame, text="Input", padding="10")
-        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        input_frame.grid_columnconfigure(1, weight=1)
-        
+        # --- Reversible Image ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
         macro_path = os.path.join(script_dir, "Images", "Rev_macro.png")
+        macro_path_irr = os.path.join(script_dir, "Images", "Irr_macro.png")
+
+        image = Image.open(macro_path)
+        w, h = image.size
+        image = image.resize((int(w * 0.32), int(h * 0.32)), Image.LANCZOS)  # 32% size
+        image.load()  # force decode
+        image = image.convert("RGBA")
+        self.photo_image_rev = ImageTk.PhotoImage(image)
         
-        try:
-            image = Image.open(macro_path)
-            image.load()  # force decode
-            image = image.convert("RGBA")
+        image = Image.open(macro_path_irr)
+        w, h = image.size
+        image = image.resize((int(w * 0.32), int(h * 0.32)), Image.LANCZOS)  # 32% size
+        image.load()  # force decode
+        image = image.convert("RGBA")
+        self.photo_image_irr = ImageTk.PhotoImage(image)
         
-            self.photo_image = ImageTk.PhotoImage(image)
-            image_label = Label(input_frame, image=self.photo_image)
-            image_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Reversible", font=(8)).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, image=self.photo_image_rev).grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Irreversible", font=(8)).grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, image=self.photo_image_irr).grid(row=4, column=0, padx=5, pady=5, sticky="w")
         
-        except Exception as e:
-            print("Failed to load image:", e)
+        # --- Input Section ---
+        input_frame = LabelFrame(frame, text="Input", padding="10")
+        input_frame.grid(row=5, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(1, weight=1)
         
         return
     
