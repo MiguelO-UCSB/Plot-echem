@@ -16,6 +16,7 @@ bool_map = {"true": True, 'True': True,
 Overlay_options = ['True', 'False']
 Export_format_types = ['png', 'pdf', 'svg', 'jpg']
 Rev_or_Irr = ['Reversible', 'Irreversible']
+Micro_or_Nanoparticle = ['Microelectrode', 'Nanoparticle on Microelectrode']
 
 def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = StringVar()
@@ -786,6 +787,196 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         self.output_labels["Area"].config(text=f"{A_calc:.3e} cm²")
         self.output_labels["Diameter"].config(text=f"{np.sqrt(A_calc/np.pi)*20:.3} mm")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
+        
+class Make_Popup_GUI_micro():
+    
+    def __init__(self, GUI):
+        self.GUI = GUI
+        self.make_popup()
+        
+        self.F = 96485.33212  # C/mol
+        self.R = 8.314462618  # J/mol·K
+        
+        # --- Diffusion coefficient dictionary (cm^2/s) ---
+        self.redox_dict = {
+            "Ru(NH₃)₆³⁺/²⁺": 8.43e-6,
+            "FcMeOH": 7.60e-6,
+            "Fe(CN)₆³⁻/⁴⁻": 6.67e-6,
+            "O₂": 2e-5,
+            "H⁺": 9.8e-5,
+            "H₂": 5.13e-5,
+            "Cu²⁺": 7.33e-6,
+            "IPA": 1.06e-6,
+        }
+        
+        self.redox_dict_n_vals = {
+            "Ru(NH₃)₆³⁺/²⁺": 1,
+            "FcMeOH": 1,
+            "Fe(CN)₆³⁻/⁴⁻": 1,
+            "O₂": 2,
+            "H⁺": 2,
+            "H₂": 2,
+            "Cu²⁺": 2,
+            "IPA": 2,
+        }
+        
+        # --- Tkinter String Variables ---
+        # These variables are linked to widgets to get/set their values easily.
+        if not hasattr(self, 'redox_var'):
+            # Will already have these attributes if it's being reinitialized
+            self.micro_option = StringVar(value=Micro_or_Nanoparticle[0])
+            self.redox_var = StringVar(value=list(self.redox_dict.keys())[0])
+            self.peakcurrent_var = DoubleVar(value=1.627e-9) # A
+            self.conc_var = DoubleVar(value=1e-3)            # M
+            self.radius_var = DoubleVar(value=5.0)           # um
+            self.radius_nano_var = DoubleVar(value=35)       # nm
+        
+        self.fill_leftframe()
+        
+    def make_popup(self):
+        self.popup = Toplevel()
+        self.popup.title("Microelectrode Randles–Ševčík Calculator")
+        self.leftframe_MicroRSPopup  = Frame(self.popup)
+        self.leftframe_MicroRSPopup.grid(row=0, column=0)
+    
+    
+class MicroRSPopup(Make_Popup_GUI_micro):
+    
+    def __init__(self, GUI):
+        super().__init__(GUI=GUI)
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe_MicroRSPopup
+        
+        Label(frame, text="Microelectrode").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        text0 = 'Iss = 4nFDCr'
+        Label(frame, text=text0).grid(row=2, column=0, padx=5, pady=5, sticky="se")
+        text1 = ", where Iss is the amplitude of the current, n is the number of electrons, F is Faraday’s constant,"
+        Label(frame, text=text1).grid(row=2, column=1, padx=5, pady=5, sticky="sw")
+        text2 = "D is the diffusion coefficient of reactants at concentration C, and r is the radius of the electrode."
+        Label(frame, text=text2).grid(row=3, column=1, padx=5, pady=5, sticky="nw")
+        
+        Label(frame, text="Nanoparticle on Microelectrode").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        text3 = 'Iss = 4π(ln 2)nFDCr'
+        Label(frame, text=text3).grid(row=5, column=0, padx=5, pady=5, sticky="se")
+        text4 = ", where I is the amplitude of the current, n is the number of electrons, F is Faraday’s constant,"
+        Label(frame, text=text4).grid(row=5, column=1, padx=5, pady=5, sticky="sw")
+        text5 = "D is the diffusion coefficient of reactants at concentration C, and r is the radius of the single-metal NP."
+        Label(frame, text=text5).grid(row=6, column=1, padx=5, pady=5, sticky="nw")
+        
+        # ---------------- Frames ----------------
+        input_frame_MacroRSPopup = LabelFrame(frame, text="Randles–Ševčík Inputs")
+        input_frame_MacroRSPopup.grid(row=7, column=0, padx=5, pady=5, sticky="nsew")
+        
+        output_frame_MacroRSPopup = LabelFrame(frame, text="Calculated Outputs")
+        output_frame_MacroRSPopup.grid(row=7, column=1, padx=5, pady=5, sticky="nsew")
+        
+        # ---------------- Tkinter variables ----------------
+        self.diff_var = DoubleVar(value=list(self.redox_dict.values())[0])
+        self.n_var = DoubleVar(value=list(self.redox_dict_n_vals.values())[0])
+        
+        # ---------------- Input widgets ----------------
+        Label(input_frame_MacroRSPopup, text="Option:").grid(row=0, column=0, sticky="e")
+        OptionMenu(input_frame_MacroRSPopup, self.micro_option, Micro_or_Nanoparticle[0], *Micro_or_Nanoparticle).grid(row=0, column=1, sticky="ew")
+        
+        Label(input_frame_MacroRSPopup, text="Redox Probe:").grid(row=3, column=0, sticky="e")
+        
+        redox_options = list(self.redox_dict.keys()) + ["Custom"]
+        redox_menu = Combobox(input_frame_MacroRSPopup, textvariable=self.redox_var,
+                              values=redox_options, state="readonly")
+        redox_menu.grid(row=3, column=1, sticky="ew")
+        redox_menu.bind("<<ComboboxSelected>>", self.update_diff_entry)
+
+        Label(input_frame_MacroRSPopup, text="Diffusion coeff. - D:").grid(row=4, column=0, sticky="e")
+        self.diff_entry = Entry(input_frame_MacroRSPopup, textvariable=self.diff_var, width=10, state="disabled")
+        self.diff_entry.grid(row=4, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="cm²/s").grid(row=4, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Number of electrons - n: ").grid(row=5, column=0, sticky="e")
+        self.n_entry = Entry(input_frame_MacroRSPopup, textvariable=self.n_var, width=10, state="disabled")
+        self.n_entry.grid(row=5, column=1, sticky="ew")
+        
+        Label(input_frame_MacroRSPopup, text="Steady state current - Iss:").grid(row=6, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.peakcurrent_var, width=10).grid(row=6, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="A").grid(row=6, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Concentration - [A]bulk :").grid(row=7, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.conc_var, width=10).grid(row=7, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="M").grid(row=7, column=2, sticky="w")
+
+        Label(input_frame_MacroRSPopup, text="Radius of WE - r:").grid(row=9, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.radius_var, width=10).grid(row=9, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="μm").grid(row=9, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Radius of Nanoparticle - r:").grid(row=10, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.radius_nano_var, width=10).grid(row=10, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="nm").grid(row=10, column=2, sticky="w")
+
+        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=11, column=0, columnspan=2, pady=6, sticky="ew")
+        
+        # ---------------- Output widgets ----------------
+        self.output_labels = {}
+        for i, label in enumerate(["Steady state current", "Concentration", "Radius", "Diameter", "Diffusion coeff."]):
+            Label(output_frame_MacroRSPopup, text=label + ":").grid(row=i, column=0, sticky="e")
+            lbl = Label(output_frame_MacroRSPopup, text="—", font=("Calibri", 12))
+            lbl.grid(row=i, column=1, sticky="w")
+            self.output_labels[label] = lbl
+    
+    def update_diff_entry(self, event=None):
+        """Update diffusion coefficient entry based on selected probe."""
+        selected = self.redox_var.get()
+        if selected == "Custom":
+            self.diff_entry.config(state="normal")
+            self.n_entry.config(state="normal")
+        else:
+            D = self.redox_dict.get(selected, 0)
+            self.diff_var.set(D)
+            self.diff_entry.config(state="disabled")
+            
+            n = self.redox_dict_n_vals.get(selected, 0)
+            self.n_var.set(n)
+            self.n_entry.config(state="disabled")
+            
+    def calculate_all(self):
+        try:
+            D = float(self.diff_var.get())
+            n = float(self.n_var.get())
+            C_M = float(self.conc_var.get())
+            r_um = float(self.radius_var.get())
+            r_nm_NP = float(self.radius_nano_var.get())
+            Iss = float(self.peakcurrent_var.get())
+        except ValueError:
+            print("Invalid input detected.")
+            return
+
+        if D is None or n <= 0 or C_M <= 0 or r_um <= 0:
+            print("Invalid or missing values.")
+            return
+
+        # Convert and compute
+        C = C_M * 1e-3  # M → mol/cm³
+        r_cm = (r_um) / 10000 # cm (1 cm/ 10000 um)
+        r_cm_NP = (r_nm_NP) / 1e7 # cm (1 cm / 1e7 nm)
+        
+        if self.micro_option.get() == 'Microelectrode':
+            Iss_calc = 4 * n * self.F * D * C * r_cm
+            C_calc = Iss/(4 * n * self.F * D * r_cm)
+            r_calc = Iss/(4 * n * self.F * D * C)
+            D_calc = Iss/(4 * n * self.F * C * r_cm)
+            
+        if self.micro_option.get() == 'Nanoparticle on Microelectrode':
+            Iss_calc = 4 * np.pi * np.log(2) * n * self.F * D * C * r_cm_NP
+            C_calc = Iss/(4 * np.pi * np.log(2) * n * self.F * D * r_cm_NP)
+            r_calc = Iss/(4 * np.pi * np.log(2) * n * self.F * D * C)
+            D_calc = Iss/(4 * np.pi * np.log(2) * n * self.F * C * r_cm_NP)
+            
+        # Update output fields
+        self.output_labels["Steady state current"].config(text=f"{Iss_calc:.3e} A, {Iss_calc*1e9:.3} nA, {Iss_calc*1e12:.3} pA")
+        self.output_labels["Concentration"].config(text=f"{C_calc/1e-3:.3e} M, {C_calc*1e6:.3} mM")
+        self.output_labels["Radius"].config(text=f"{r_calc*10000:.3} μm, {r_calc*1e7:.3} nm")
+        self.output_labels["Diameter"].config(text=f"{r_calc*20000:.3} μm, {r_calc*2e7:.3} nm")
+        self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
     
 class Popup_Generator():
     '''
@@ -796,6 +987,7 @@ class Popup_Generator():
         self.ReferenceElecConvPopup = None
         self.FTdataPopup = None
         self.MacroRSPopup = None
+        self.MicroRSPopup = None
     
     def get(self, GUI, popup_type, data):
         '''
@@ -823,4 +1015,12 @@ class Popup_Generator():
                 return self.MacroRSPopup.__init__(GUI)
             # print('Test First Open')
             self.MacroRSPopup = MacroRSPopup(GUI)
+            return
+        
+        if popup_type == 'Micro_RS':
+            if self.MicroRSPopup:
+                # print('Test Reload')
+                return self.MicroRSPopup.__init__(GUI)
+            # print('Test First Open')
+            self.MicroRSPopup = MicroRSPopup(GUI)
             return

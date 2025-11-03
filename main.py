@@ -98,6 +98,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         menubar.add_cascade(menu=menu_fun, label='Extra Tools')
         menu_fun.add_command(label='Open Reference Electrode Converter', command=self.ref_converter)
         menu_fun.add_command(label='Open Macrodisk RS Calculator', command=self.macro_RS)
+        menu_fun.add_command(label='Open Microdisk RS Calculator', command=self.micro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
         
         ### SET UP FRAMES ###
@@ -314,6 +315,11 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         if not hasattr(self, 'Macro_RS'):
             self.Popup_Generator = Popup_Generator()
         self.Popup_Generator.get(self, 'Macro_RS', None)
+    
+    def micro_RS(self):
+        if not hasattr(self, 'Micro_RS'):
+            self.Popup_Generator = Popup_Generator()
+        self.Popup_Generator.get(self, 'Micro_RS', None)
         
     def FT_data(self):
         # Get data from the lines
