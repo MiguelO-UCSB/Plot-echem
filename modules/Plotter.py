@@ -6,6 +6,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Rectangle
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 import os
 from tkinter import *
@@ -484,6 +485,105 @@ class EchemFig():
                          linestyle = line_styles[color_idx],
                          linewidth = line_sizes[color_idx], 
                          label=label)
+            
+            add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
+            if add_inset == True:
+                try:
+                    width = float(self.GUI.percent_width_Inset.get())
+                    height = float(self.GUI.percent_height_Inset.get())
+                except:
+                    print('Error: Set width and height for inset. Default = 35')
+                    width = 25
+                    height = 25
+                    
+                location = self.GUI.location_for_Inset.get()
+                xmin = self.GUI.xminval_Inset.get()
+                xmax = self.GUI.xmaxval_Inset.get()
+                ymin = self.GUI.yminval_Inset.get()
+                ymax = self.GUI.ymaxval_Inset.get()
+                xlim = (xmin, xmax)
+                ylim = (ymin, ymax)
+                
+                if all(x == '' for x in xlim) and all(y == '' for y in ylim):
+                    print('Error: set x and y limits for inset')
+                    xlim = (0, 1)
+                    ylim = (0, 1)
+                    
+                axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
+                axins.plot(xvals + x_shifts[color_idx],
+                             yvals[:len(xvals)] + y_shifts[color_idx],
+                             color=colors[color_idx],
+                             marker = marker_styles[color_idx],
+                             markersize = marker_sizes[color_idx],
+                             linestyle = line_styles[color_idx],
+                             linewidth = line_sizes[color_idx],)
+                axins.set_facecolor('none')
+                
+                add_ticks_inset = bool_map.get(self.GUI.Ticks_Inset.get().strip().lower(), False)
+                if add_ticks_inset == False:
+                    axins.tick_params(labelleft=False, labelbottom=False, left=False, bottom=False)
+                
+                zoom_color = self.GUI.Color_Inset.get()
+                
+                # Update x-axis limits if both are provided
+                try:
+                    axins.set_xlim(float(xlim[0]), float(xlim[1]))
+                except Exception as e:
+                    print(f'Skiping setting x axis limit because of error: {e}')
+                    axins.set_xlim(0, 1)
+                    pass  # Could log or print warning
+                
+                # Update y-axis limits if both are provided
+                try:
+                    axins.set_ylim(float(ylim[0]), float(ylim[1]))
+                except Exception as e:
+                    print(f'Skiping setting y axis limit because of error: {e}')
+                    axins.set_ylim(0, 1)
+                    pass
+                
+                xmultiple = self.GUI.x_axis_tickmultiple_Inset.get()
+                if xmultiple != '':
+                    try:
+                        axins.xaxis.set_major_locator(tk.MultipleLocator(float(xmultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                ymultiple = self.GUI.y_axis_tickmultiple_Inset.get()
+                if ymultiple != '':
+                    try:
+                        axins.yaxis.set_major_locator(tk.MultipleLocator(float(ymultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                spine_LS = self.GUI.spine_line_style_Inset.get()
+                axins.spines['bottom'].set_color(zoom_color)
+                axins.spines['bottom'].set_linestyle(spine_LS)
+                axins.spines['top'].set_color(zoom_color) 
+                axins.spines['top'].set_linestyle(spine_LS)
+                axins.spines['right'].set_color(zoom_color)
+                axins.spines['right'].set_linestyle(spine_LS)
+                axins.spines['left'].set_color(zoom_color)
+                axins.spines['left'].set_linestyle(spine_LS)
+                
+                axins.tick_params(
+                    labelsize=8,
+                    length=4,
+                    color=zoom_color,
+                    which='both')
+                zoom_LS = self.GUI.zoom_line_style_Inset.get()
+                rect, lines = self.ax.indicate_inset_zoom(axins, edgecolor=zoom_color,
+                                                     linewidth = 1, linestyle=zoom_LS)
+                
+                lines[0].set_visible(True)      # Lower left
+                lines[0].set_linestyle(self.GUI.lowerleft_line_style_Inset.get())
+                lines[1].set_visible(True)        # Upper left
+                lines[1].set_linestyle(self.GUI.upperleft_line_style_Inset.get())
+                lines[2].set_visible(True)        # Lower right
+                lines[2].set_linestyle(self.GUI.lowerright_line_style_Inset.get())
+                lines[3].set_visible(True)      # Upper right
+                lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             
         axis_labels = {'t': f'Time ({time_units})', 'V': f'E vs. {ref_label} ({ref_units})', 'I': f'Current ({current_units})'}
         try:
@@ -1019,6 +1119,105 @@ class EchemFig():
                          linestyle = line_styles[color_idx],
                          linewidth = line_sizes[color_idx], 
                          label = label)
+            
+            add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
+            if add_inset == True:
+                try:
+                    width = float(self.GUI.percent_width_Inset.get())
+                    height = float(self.GUI.percent_height_Inset.get())
+                except:
+                    print('Error: Set width and height for inset. Default = 35')
+                    width = 25
+                    height = 25
+                    
+                location = self.GUI.location_for_Inset.get()
+                xmin = self.GUI.xminval_Inset.get()
+                xmax = self.GUI.xmaxval_Inset.get()
+                ymin = self.GUI.yminval_Inset.get()
+                ymax = self.GUI.ymaxval_Inset.get()
+                xlim = (xmin, xmax)
+                ylim = (ymin, ymax)
+                
+                if all(x == '' for x in xlim) and all(y == '' for y in ylim):
+                    print('Error: set x and y limits for inset')
+                    xlim = (0, 1)
+                    ylim = (0, 1)
+                    
+                axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
+                axins.plot(self.real_Z[count]/units  + x_shifts[color_idx],
+                             self.imag_Z[count]/units  + y_shifts[color_idx],
+                             color=colors[color_idx],
+                             marker = marker_styles[color_idx],
+                             markersize = marker_sizes[color_idx],
+                             linestyle = line_styles[color_idx],
+                             linewidth = line_sizes[color_idx], )
+                axins.set_facecolor('none')
+                
+                add_ticks_inset = bool_map.get(self.GUI.Ticks_Inset.get().strip().lower(), False)
+                if add_ticks_inset == False:
+                    axins.tick_params(labelleft=False, labelbottom=False, left=False, bottom=False)
+                
+                zoom_color = self.GUI.Color_Inset.get()
+                
+                # Update x-axis limits if both are provided
+                try:
+                    axins.set_xlim(float(xlim[0]), float(xlim[1]))
+                except Exception as e:
+                    print(f'Skiping setting x axis limit because of error: {e}')
+                    axins.set_xlim(0, 1)
+                    pass  # Could log or print warning
+                
+                # Update y-axis limits if both are provided
+                try:
+                    axins.set_ylim(float(ylim[0]), float(ylim[1]))
+                except Exception as e:
+                    print(f'Skiping setting y axis limit because of error: {e}')
+                    axins.set_ylim(0, 1)
+                    pass
+                
+                xmultiple = self.GUI.x_axis_tickmultiple_Inset.get()
+                if xmultiple != '':
+                    try:
+                        axins.xaxis.set_major_locator(tk.MultipleLocator(float(xmultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                ymultiple = self.GUI.y_axis_tickmultiple_Inset.get()
+                if ymultiple != '':
+                    try:
+                        axins.yaxis.set_major_locator(tk.MultipleLocator(float(ymultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                spine_LS = self.GUI.spine_line_style_Inset.get()
+                axins.spines['bottom'].set_color(zoom_color)
+                axins.spines['bottom'].set_linestyle(spine_LS)
+                axins.spines['top'].set_color(zoom_color) 
+                axins.spines['top'].set_linestyle(spine_LS)
+                axins.spines['right'].set_color(zoom_color)
+                axins.spines['right'].set_linestyle(spine_LS)
+                axins.spines['left'].set_color(zoom_color)
+                axins.spines['left'].set_linestyle(spine_LS)
+                
+                axins.tick_params(
+                    labelsize=8,
+                    length=4,
+                    color=zoom_color,
+                    which='both')
+                zoom_LS = self.GUI.zoom_line_style_Inset.get()
+                rect, lines = self.ax.indicate_inset_zoom(axins, edgecolor=zoom_color,
+                                                     linewidth = 1, linestyle=zoom_LS)
+                
+                lines[0].set_visible(True)      # Lower left
+                lines[0].set_linestyle(self.GUI.lowerleft_line_style_Inset.get())
+                lines[1].set_visible(True)        # Upper left
+                lines[1].set_linestyle(self.GUI.upperleft_line_style_Inset.get())
+                lines[2].set_visible(True)        # Lower right
+                lines[2].set_linestyle(self.GUI.lowerright_line_style_Inset.get())
+                lines[3].set_visible(True)      # Upper right
+                lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             count += 1
             
         try:
@@ -1124,6 +1323,114 @@ class EchemFig():
                              label = label)
                 ylabel = r'Phase ($\degree$)'
             
+            add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
+            if add_inset == True:
+                try:
+                    width = float(self.GUI.percent_width_Inset.get())
+                    height = float(self.GUI.percent_height_Inset.get())
+                except:
+                    print('Error: Set width and height for inset. Default = 35')
+                    width = 25
+                    height = 25
+                    
+                location = self.GUI.location_for_Inset.get()
+                xmin = self.GUI.xminval_Inset.get()
+                xmax = self.GUI.xmaxval_Inset.get()
+                ymin = self.GUI.yminval_Inset.get()
+                ymax = self.GUI.ymaxval_Inset.get()
+                xlim = (xmin, xmax)
+                ylim = (ymin, ymax)
+                
+                if all(x == '' for x in xlim) and all(y == '' for y in ylim):
+                    print('Error: set x and y limits for inset')
+                    xlim = (0, 1)
+                    ylim = (0, 1)
+                    
+                axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
+                
+                if option == 'Z':
+                    axins.plot(self.freq[count]  + x_shifts[color_idx],
+                                 np.log10(self.abs_Z[count])/units + y_shifts[color_idx],
+                                 color=colors[color_idx],
+                                 marker = marker_styles[color_idx],
+                                 markersize = marker_sizes[color_idx],
+                                 linestyle = line_styles[color_idx],
+                                 linewidth = line_sizes[color_idx],)
+                elif option == 'Phase':
+                    axins.plot(self.freq[count]  + x_shifts[color_idx], 
+                                 self.phase[count] + y_shifts[color_idx],
+                                 color=colors[color_idx],
+                                 marker = marker_styles[color_idx],
+                                 markersize = marker_sizes[color_idx],
+                                 linestyle = line_styles[color_idx],
+                                 linewidth = line_sizes[color_idx],)
+                axins.set_facecolor('none')
+                
+                add_ticks_inset = bool_map.get(self.GUI.Ticks_Inset.get().strip().lower(), False)
+                if add_ticks_inset == False:
+                    axins.tick_params(labelleft=False, labelbottom=False, left=False, bottom=False)
+                
+                zoom_color = self.GUI.Color_Inset.get()
+                
+                # Update x-axis limits if both are provided
+                try:
+                    axins.set_xlim(float(xlim[0]), float(xlim[1]))
+                except Exception as e:
+                    print(f'Skiping setting x axis limit because of error: {e}')
+                    axins.set_xlim(0, 1)
+                    pass  # Could log or print warning
+                
+                # Update y-axis limits if both are provided
+                try:
+                    axins.set_ylim(float(ylim[0]), float(ylim[1]))
+                except Exception as e:
+                    print(f'Skiping setting y axis limit because of error: {e}')
+                    axins.set_ylim(0, 1)
+                    pass
+                
+                xmultiple = self.GUI.x_axis_tickmultiple_Inset.get()
+                if xmultiple != '':
+                    try:
+                        axins.xaxis.set_major_locator(tk.MultipleLocator(float(xmultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                ymultiple = self.GUI.y_axis_tickmultiple_Inset.get()
+                if ymultiple != '':
+                    try:
+                        axins.yaxis.set_major_locator(tk.MultipleLocator(float(ymultiple)))
+                    except Exception as e:
+                        print(f'Skiping setting x axis major tick multiple because of error: {e}')
+                        pass
+                
+                spine_LS = self.GUI.spine_line_style_Inset.get()
+                axins.spines['bottom'].set_color(zoom_color)
+                axins.spines['bottom'].set_linestyle(spine_LS)
+                axins.spines['top'].set_color(zoom_color) 
+                axins.spines['top'].set_linestyle(spine_LS)
+                axins.spines['right'].set_color(zoom_color)
+                axins.spines['right'].set_linestyle(spine_LS)
+                axins.spines['left'].set_color(zoom_color)
+                axins.spines['left'].set_linestyle(spine_LS)
+                
+                axins.tick_params(
+                    labelsize=8,
+                    length=4,
+                    color=zoom_color,
+                    which='both')
+                zoom_LS = self.GUI.zoom_line_style_Inset.get()
+                rect, lines = self.ax.indicate_inset_zoom(axins, edgecolor=zoom_color,
+                                                     linewidth = 1, linestyle=zoom_LS)
+                
+                lines[0].set_visible(True)      # Lower left
+                lines[0].set_linestyle(self.GUI.lowerleft_line_style_Inset.get())
+                lines[1].set_visible(True)        # Upper left
+                lines[1].set_linestyle(self.GUI.upperleft_line_style_Inset.get())
+                lines[2].set_visible(True)        # Lower right
+                lines[2].set_linestyle(self.GUI.lowerright_line_style_Inset.get())
+                lines[3].set_visible(True)      # Upper right
+                lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             count += 1
         
         try:

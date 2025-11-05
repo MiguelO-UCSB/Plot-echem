@@ -46,6 +46,10 @@ Legend_loc = ['best', 'upper left', 'upper right',
               'lower left', 'lower right','upper center',
               'lower center', 'center left', 'center right', 'center']
 
+Inset_loc = ['center', 'center left', 'center right',
+             'upper center','upper left', 'upper right',
+             'lower center','lower left', 'lower right']
+
 mask_options = ['t', 'V', 'I']
 
 # Data for the cascading OptionMenus
@@ -550,59 +554,117 @@ class GUISetupMethods():
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
         inner_tabs.grid(row=1, column=0, sticky=(N,S,E,W), pady=10)
-        inner_tabs2 = Notebook(frame)
-        inner_tabs2.grid(row=2, column=0, sticky=(N,S,E,W), pady=10)
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
-        LSMSFrame = Frame(inner_tabs)
-        LegendFrame = Frame(inner_tabs2)
+        LegendLSMSFrame = Frame(inner_tabs)
+        InsetFrame = Frame(inner_tabs)
         
-        inner_tabs.add(LSMSFrame, text='  Linestyle and Makers  ')
-        inner_tabs2.add(LegendFrame, text='  Legend  ')
+        inner_tabs.add(LegendLSMSFrame, text='  Legend, Linestyle, and Makers  ')
+        inner_tabs.add(InsetFrame, text='  Inset  ')
         
         '''Legend'''
-        Label(LegendFrame, text='Legend: ').grid(row=0, column=0, sticky=(E))
-        self.Legend_ = OptionMenuStringVar(LegendFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        Label(LegendLSMSFrame, text='Legend: ').grid(row=0, column=0, sticky=(E))
+        self.Legend_ = OptionMenuStringVar(LegendLSMSFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         
-        Label(LegendFrame, text='Labels: ').grid(row=1, column=0, sticky=(E))
-        self.labels_for_legend = EntryStringVar(LegendFrame, 10, 1, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Labels: ').grid(row=1, column=0, sticky=(E))
+        self.labels_for_legend = EntryStringVar(LegendLSMSFrame, 10, 1, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(LegendFrame, text='Location: ').grid(row=2, column=0, sticky=(E))
-        self.location_for_legend = OptionMenuStringVar(LegendFrame, Legend_loc, 2, 1, (W,E), idx=0,)
+        Label(LegendLSMSFrame, text='Location: ').grid(row=2, column=0, sticky=(E))
+        self.location_for_legend = OptionMenuStringVar(LegendLSMSFrame, Legend_loc, 2, 1, (W,E), idx=0,)
         
-        Label(LegendFrame, text='Size: ').grid(row=3, column=0, sticky=(E))
-        self.fontsize_for_legend = EntryStringVar(LegendFrame, 10, 3, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Size: ').grid(row=3, column=0, sticky=(E))
+        self.fontsize_for_legend = EntryStringVar(LegendLSMSFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(LegendFrame, text='Handle Length: ').grid(row=7, column=0, sticky=(E))
-        self.handle_length_legend = EntryStringVar(LegendFrame, 10, 7, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Handle Length: ').grid(row=7, column=0, sticky=(E))
+        self.handle_length_legend = EntryStringVar(LegendLSMSFrame, 10, 7, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='1.5')
-        Label(LegendFrame, text='').grid(row=8, column=0, sticky=(E))
+        Label(LegendLSMSFrame, text='').grid(row=8, column=0, sticky=(E))
         
         '''Linestyle and Makers'''
-        Label(LSMSFrame, text='Line width: ').grid(row=9, column=0, sticky=(E))
-        self.line_width = EntryStringVar(LSMSFrame, 10, 9, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Line width: ').grid(row=9, column=0, sticky=(E))
+        self.line_width = EntryStringVar(LegendLSMSFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='2')
         
-        Label(LSMSFrame, text='Line Style: ').grid(row=10, column=0, sticky=(E))
-        self.line_style = OptionMenuStringVar(LSMSFrame, linestyle_str, 10, 1, (W,E), idx=0,)
+        Label(LegendLSMSFrame, text='Line Style: ').grid(row=10, column=0, sticky=(E))
+        self.line_style = OptionMenuStringVar(LegendLSMSFrame, linestyle_str, 10, 1, (W,E), idx=0,)
         
-        Label(LSMSFrame, text='Manual LS: ').grid(row=11, column=0, sticky=(E))
-        self.manual_line_styles = EntryStringVar(LSMSFrame, 10, 11, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Manual LS: ').grid(row=11, column=0, sticky=(E))
+        self.manual_line_styles = EntryStringVar(LegendLSMSFrame, 10, 11, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(LSMSFrame, text='Marker size: ').grid(row=12, column=0, sticky=(E))
-        self.marker_width = EntryStringVar(LSMSFrame, 10, 12, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='').grid(row=12, column=0, sticky=(E))
+        
+        Label(LegendLSMSFrame, text='Marker size: ').grid(row=13, column=0, sticky=(E))
+        self.marker_width = EntryStringVar(LegendLSMSFrame, 10, 13, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='5')
         
-        Label(LSMSFrame, text='Marker Style: ').grid(row=13, column=0, sticky=(E))
-        self.marker_style = OptionMenuStringVar(LSMSFrame, marker_str, 13, 1, (W,E), idx=0,)
+        Label(LegendLSMSFrame, text='Marker Style: ').grid(row=14, column=0, sticky=(E))
+        self.marker_style = OptionMenuStringVar(LegendLSMSFrame, marker_str, 14, 1, (W,E), idx=0,)
         
-        Label(LSMSFrame, text='Manual MS: ').grid(row=14, column=0, sticky=(E))
-        self.manual_marker_styles = EntryStringVar(LSMSFrame, 10, 14, 1, (W,E), tab=True,
+        Label(LegendLSMSFrame, text='Manual MS: ').grid(row=15, column=0, sticky=(E))
+        self.manual_marker_styles = EntryStringVar(LegendLSMSFrame, 10, 15, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-    
+        
+        '''Inset'''
+        Label(InsetFrame, text='Inset: ').grid(row=0, column=0, sticky=(E))
+        self.Inset_ = OptionMenuStringVar(InsetFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        
+        Label(InsetFrame, text='% Width: ').grid(row=1, column=0, sticky=(E))
+        self.percent_width_Inset = EntryStringVar(InsetFrame, 10, 1, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='25')
+        Label(InsetFrame, text='% Height: ').grid(row=1, column=2, sticky=(E))
+        self.percent_height_Inset = EntryStringVar(InsetFrame, 10, 1, 3, (W,E), tab=True,
+                                                  bind_key='<Return>', default='25')
+        
+        Label(InsetFrame, text='Location: ').grid(row=2, column=0, sticky=(E))
+        self.location_for_Inset = OptionMenuStringVar(InsetFrame, Inset_loc, 2, 1, (W,E), idx=0,)
+        
+        Label(InsetFrame, text='Color: ').grid(row=3, column=0, sticky=(E))
+        self.Color_Inset = EntryStringVar(InsetFrame, 10, 3, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='red')
+        
+        Label(InsetFrame, text='').grid(row=4, column=0, sticky=(E))
+        Label(InsetFrame, text='Ticks: ').grid(row=5, column=0, sticky=(E))
+        self.Ticks_Inset = OptionMenuStringVar(InsetFrame, Overlay_options, 5, 1, (W,E), idx=1,)
+        
+        Label(InsetFrame, text='X-axis tick multiple: ').grid(row=6, column=0, sticky=(E))
+        self.x_axis_tickmultiple_Inset = EntryStringVar(InsetFrame, 10, 6, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(InsetFrame, text='Min: ').grid(row=7, column=0, sticky=(E))
+        self.xminval_Inset = EntryStringVar(InsetFrame, 10, 7, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='0')
+        Label(InsetFrame, text='Max: ').grid(row=7, column=2, sticky=(E))
+        self.xmaxval_Inset = EntryStringVar(InsetFrame, 10, 7, 3, (W,E), tab=True,
+                                                  bind_key='<Return>', default='1')     
+        
+        Label(InsetFrame, text='Y-axis tick multiple: ').grid(row=10, column=0, sticky=(E))
+        self.y_axis_tickmultiple_Inset = EntryStringVar(InsetFrame, 10, 10, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(InsetFrame, text='Min: ').grid(row=12, column=0, sticky=(E))
+        self.yminval_Inset = EntryStringVar(InsetFrame, 10, 12, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='0')
+        Label(InsetFrame, text='Max: ').grid(row=12, column=2, sticky=(E))
+        self.ymaxval_Inset = EntryStringVar(InsetFrame, 10, 12, 3, (W,E), tab=True,
+                                                  bind_key='<Return>', default='1')
+        Label(InsetFrame, text='').grid(row=13, column=0, sticky=(E))
+        
+        Label(InsetFrame, text='Spine Line Style: ').grid(row=14, column=0, sticky=(E))
+        self.spine_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 14, 1, (W,E), idx=0,)
+        Label(InsetFrame, text='Zoom Line Style: ').grid(row=15, column=0, sticky=(E))
+        self.zoom_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 15, 1, (W,E), idx=0,)
+        Label(InsetFrame, text='Connecting Line Styles').grid(row=16, column=0, sticky=(E))
+        
+        Label(InsetFrame, text='Upper Left: ').grid(row=17, column=0, sticky=(E))
+        self.upperleft_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 17, 1, (W,E), idx=1,)
+        Label(InsetFrame, text='Upper Right: ').grid(row=17, column=2, sticky=(E))
+        self.upperright_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 17, 3, (W,E), idx=1,)
+        Label(InsetFrame, text='Lower Left: ').grid(row=18, column=0, sticky=(E))
+        self.lowerleft_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 18, 1, (W,E), idx=1,)
+        Label(InsetFrame, text='Lower Right: ').grid(row=18, column=2, sticky=(E))
+        self.lowerright_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 18, 3, (W,E), idx=1,)
+        
     def MakeDataControlFrame(self, frame):
         # Label(frame, text='Import partial data: ').grid(row=1, column=0, sticky=(E))
         # self.import_partial_data = OptionMenuStringVar(frame, Overlay_options, 1, 1, (W,E), idx=1,)

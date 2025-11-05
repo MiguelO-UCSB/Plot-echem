@@ -187,13 +187,20 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.ImpedanceUnits_.trace('w', self.fig_opt_changed)
         self.Scale_EIS.trace('w', self.fig_opt_changed)
         
-        # Legend traces
+        # Customize traces
         self.Legend_.trace('w', self.fig_opt_changed)
         self.location_for_legend.trace('w', self.fig_opt_changed)
-        
-        # Lines and Marker traces
         self.line_style.trace('w', self.fig_opt_changed)
         self.marker_style.trace('w', self.fig_opt_changed)
+        self.Inset_.trace('w', self.fig_opt_changed)
+        self.location_for_Inset.trace('w', self.fig_opt_changed)
+        self.Ticks_Inset.trace('w', self.fig_opt_changed)
+        self.spine_line_style_Inset.trace('w', self.fig_opt_changed)
+        self.zoom_line_style_Inset.trace('w', self.fig_opt_changed)
+        self.upperleft_line_style_Inset.trace('w', self.fig_opt_changed)
+        self.upperright_line_style_Inset.trace('w', self.fig_opt_changed)
+        self.lowerleft_line_style_Inset.trace('w', self.fig_opt_changed)
+        self.lowerright_line_style_Inset.trace('w', self.fig_opt_changed)
         
         # Data control traces
         self.apply_notch_filter.trace('w', self.fig_opt_changed)
