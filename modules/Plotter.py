@@ -319,8 +319,6 @@ class EchemFig():
         
         time_units, ref_label, ref_units, current_units = IV_unit_params
         ylabel, xlabel = IV_selection.split(' vs ')
-        
-        count = 0
     
         # Decide how many colors are needed
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
@@ -337,7 +335,7 @@ class EchemFig():
         except Exception:
             selected_files = list(range(self.file_max))
         
-        x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors)
+        x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS)
         
         if Overlay:
             selected_indices = selected_files
@@ -457,7 +455,6 @@ class EchemFig():
             if APPLY_NOTCH_FILTER == True:
                 yvals = self.notch_filter(yvals, calc_samp_freq)
                 
-            count += 1
             
             # ✅ final check outside try/except to control plotting
             if skip_sweep:
@@ -477,8 +474,8 @@ class EchemFig():
                 # Each cycle gets its own label
                 label = legend_labels[color_idx]
                 
-            self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
-                         yvals[:len(xvals)] + y_shifts[color_idx],
+            self.ln, = self.ax.plot(xvals + x_shifts[count],
+                         yvals[:len(xvals)] + y_shifts[count],
                          color=colors[color_idx],
                          marker = marker_styles[color_idx],
                          markersize = marker_sizes[color_idx],
@@ -510,8 +507,8 @@ class EchemFig():
                     ylim = (0, 1)
                     
                 axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
-                axins.plot(xvals + x_shifts[color_idx],
-                             yvals[:len(xvals)] + y_shifts[color_idx],
+                axins.plot(xvals + x_shifts[count],
+                             yvals[:len(xvals)] + y_shifts[count],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -1057,8 +1054,6 @@ class EchemFig():
         Make a Nyquist plot.
         '''
         
-        count = 0
-        
         # Decide how many colors are needed
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
             n_colors = self.NUM_SWEEPS
@@ -1074,7 +1069,7 @@ class EchemFig():
         except Exception:
             selected_files = list(range(self.file_max))
             
-        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(n_colors)
+        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(self.NUM_SWEEPS)
         
         if Overlay:
             selected_indices = selected_files
@@ -1086,6 +1081,7 @@ class EchemFig():
         legend_labels = self.set_legend_labels(n_colors, selected_indices)
         
         for count in range(self.NUM_SWEEPS):
+            
             file_num = getattr(self, "file_num", 0)
             if file_num not in selected_files:
                 continue
@@ -1111,8 +1107,8 @@ class EchemFig():
                 # Each cycle gets its own label
                 label = legend_labels[color_idx]
                 
-            self.ax.plot(self.real_Z[count]/units  + x_shifts[color_idx],
-                         self.imag_Z[count]/units  + y_shifts[color_idx],
+            self.ax.plot(self.real_Z[count]/units  + x_shifts[count],
+                         self.imag_Z[count]/units  + y_shifts[count],
                          color=colors[color_idx],
                          marker = marker_styles[color_idx],
                          markersize = marker_sizes[color_idx],
@@ -1144,8 +1140,8 @@ class EchemFig():
                     ylim = (0, 1)
                     
                 axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
-                axins.plot(self.real_Z[count]/units  + x_shifts[color_idx],
-                             self.imag_Z[count]/units  + y_shifts[color_idx],
+                axins.plot(self.real_Z[count]/units  + x_shifts[count],
+                             self.imag_Z[count]/units  + y_shifts[count],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -1218,7 +1214,7 @@ class EchemFig():
                 lines[2].set_linestyle(self.GUI.lowerright_line_style_Inset.get())
                 lines[3].set_visible(True)      # Upper right
                 lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
-            count += 1
+            
             
         try:
             self.ax.set_box_aspect(abs(float(self.GUI.box_aspect_EIS.get())))
@@ -1246,8 +1242,6 @@ class EchemFig():
         '''
         Make a Bode plot
         '''
-        
-        count = 0
         
         # Decide how many colors are needed
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
@@ -1302,8 +1296,8 @@ class EchemFig():
                 label = legend_labels[color_idx]
                 
             if option == 'Z':
-                self.ax.plot(self.freq[count]  + x_shifts[color_idx],
-                             np.log10(self.abs_Z[count])/units + y_shifts[color_idx],
+                self.ax.plot(self.freq[count]  + x_shifts[count],
+                             np.log10(self.abs_Z[count])/units + y_shifts[count],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -1313,8 +1307,8 @@ class EchemFig():
                 ylabel = f'log(|Z|) ({impedance_units})'
                 
             elif option == 'Phase':
-                self.ax.plot(self.freq[count]  + x_shifts[color_idx], 
-                             self.phase[count] + y_shifts[color_idx],
+                self.ax.plot(self.freq[count]  + x_shifts[count], 
+                             self.phase[count] + y_shifts[count],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -1349,16 +1343,16 @@ class EchemFig():
                 axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
                 
                 if option == 'Z':
-                    axins.plot(self.freq[count]  + x_shifts[color_idx],
-                                 np.log10(self.abs_Z[count])/units + y_shifts[color_idx],
+                    axins.plot(self.freq[count]  + x_shifts[count],
+                                 np.log10(self.abs_Z[count])/units + y_shifts[count],
                                  color=colors[color_idx],
                                  marker = marker_styles[color_idx],
                                  markersize = marker_sizes[color_idx],
                                  linestyle = line_styles[color_idx],
                                  linewidth = line_sizes[color_idx],)
                 elif option == 'Phase':
-                    axins.plot(self.freq[count]  + x_shifts[color_idx], 
-                                 self.phase[count] + y_shifts[color_idx],
+                    axins.plot(self.freq[count]  + x_shifts[count], 
+                                 self.phase[count] + y_shifts[count],
                                  color=colors[color_idx],
                                  marker = marker_styles[color_idx],
                                  markersize = marker_sizes[color_idx],
