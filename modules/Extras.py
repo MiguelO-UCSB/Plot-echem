@@ -391,6 +391,30 @@ class Make_Popup_GUI():
             "Fc/Fc⁺ (Ferrocene/Ferrocenium in MeCN)": 0.640
         }
         
+        self.UNIT_DIC = {
+            # "Yotta (Y)": 1e24,
+            # "Zetta (Z)": 1e21,
+            # "Exa (E)": 1e18,
+            "Peta (P)": 1e15,
+            "Tera (T)": 1e12,
+            "Giga (G)": 1e9,
+            "Mega (M)": 1e6,
+            "Kilo (k)": 1e3,
+            "Hecto (h)": 1e2,
+            "Deka (da)": 1e1,
+            " - ": 1,
+            "Deci (d)": 1e-1,
+            "Centi (c)": 1e-2,
+            "Milli (m)": 1e-3,
+            "Micro (µ)": 1e-6,
+            "Nano (n)": 1e-9,
+            "Pico (d)": 1e-12,
+            "Femto (f)": 1e-15,
+            # "Atto (a)": 1e-18,
+            # "Zepto (z)": 1e-21,
+            # "Yocto (y)": 1e-24,
+        }
+        
         self.REF_POTENTIALS_RHE = {
             "SHE (Standard Hydrogen Electrode)": 0,
             "RHE (Reversible Hydrogen Electrode)": 0}
@@ -401,30 +425,37 @@ class Make_Popup_GUI():
             # Will already have these attributes if it's being reinitialized
             self.input_potential_var = StringVar(value='0')
             self.input_potential_var_RHE = StringVar(value='0')
+            self.input_unit_variable = StringVar(value='1')
             self.temperature = StringVar(value='298')
             self.pH = StringVar(value='1')
             
         self.input_ref_var = StringVar()
         self.input_ref_var_RHE = StringVar()
+        self.input_unit_var = StringVar()
         
         # Create a dictionary of StringVars for each output label
         self.output_vars = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS}
         self.output_vars_RHE = {name: StringVar(value="--.--") for name in self.REF_POTENTIALS_RHE}
+        self.output_vars_unit = {name: StringVar(value="--") for name in self.UNIT_DIC}
 
         # Set a default value for the dropdown menu
         self.input_ref_var.set(list(self.REF_POTENTIALS.keys())[2]) # Default to SCE
         self.input_ref_var_RHE.set(list(self.REF_POTENTIALS_RHE.keys())[0]) # Default to SCE
+        self.input_unit_var.set(list(self.UNIT_DIC.keys())[7]) # Default to 1
         
         self.fill_leftframe()
         self.fill_rightframe()
+        self.fill_unitframe()
         
     def make_popup(self):
         self.popup = Toplevel()
-        self.popup.title("Reference Electrode Converter")
+        self.popup.title("Reference Electrode and Units Converter")
         self.leftframe  = Frame(self.popup)
         self.rightframe = Frame(self.popup)
+        self.unitframe = Frame(self.popup)
         self.leftframe.grid(row=0, column=0)
         self.rightframe.grid(row=0, column=1)
+        self.unitframe.grid(row=0, column=2)
         
         
     def fill_leftframe(self):
@@ -442,10 +473,11 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
     def fill_leftframe(self):
         # Put relevant buttons in self.leftframe
         frame = self.leftframe
+        Label(frame, text="Standard").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # --- Input Section ---
         input_frame = LabelFrame(frame, text="Input", padding="10")
-        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         input_frame.grid_columnconfigure(1, weight=1)
 
         Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -458,11 +490,11 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
 
         # --- Convert Button ---
         convert_button = Button(frame, text="Convert", command=self.convert_potentials)
-        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+        convert_button.grid(row=2, column=0, padx=15, pady=10, sticky="ew")
 
         # --- Output Section ---
         output_frame = LabelFrame(frame, text="Converted Potentials", padding="10")
-        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
+        output_frame.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
         output_frame.grid_columnconfigure(1, weight=1)
         
         # Dynamically create labels for each reference electrode
@@ -504,12 +536,13 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
                 self.output_vars[name].set("Error")
     
     def fill_rightframe(self):
-        # Put relevant buttons in self.leftframe
+        # Put relevant buttons in self.rightframe
         frame = self.rightframe
+        Label(frame, text="RHE - pH dependent").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # --- Input Section ---
         input_frame = LabelFrame(frame, text="Input", padding="10")
-        input_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         input_frame.grid_columnconfigure(1, weight=1)
 
         Label(input_frame, text="Potential (V):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -530,11 +563,11 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
 
         # --- Convert Button ---
         convert_button = Button(frame, text="Convert", command=self.convert_RHE_potentials)
-        convert_button.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+        convert_button.grid(row=2, column=0, padx=15, pady=10, sticky="ew")
 
         # --- Output Section ---
         output_frame = LabelFrame(frame, text="Converted Potential", padding="10")
-        output_frame.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
+        output_frame.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
         output_frame.grid_columnconfigure(1, weight=1)
         
         for i, name in enumerate(self.REF_POTENTIALS_RHE.keys()):
@@ -572,7 +605,74 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
             print(f"An error occurred: {e}")
             for name in self.REF_POTENTIALS_RHE:
                 self.output_vars_RHE[name].set("Error")
+        
+    def fill_unitframe(self):
+        # Put relevant buttons in self.unitframe
+        frame = self.unitframe
+        Label(frame, text="Unit converter").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        
+        # --- Input Section ---
+        input_frame = LabelFrame(frame, text="Input", padding="10")
+        input_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(1, weight=1)
 
+        unit_entry = Entry(input_frame, textvariable=self.input_unit_variable)
+        unit_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        ref_dropdown = OptionMenu(input_frame, self.input_unit_var, self.input_unit_var.get(), *self.UNIT_DIC.keys())
+        ref_dropdown.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        # --- Convert Button ---
+        convert_button = Button(frame, text="Convert", command=self.convert_units)
+        convert_button.grid(row=2, column=0, padx=15, pady=10, sticky="ew")
+
+        # --- Output Section ---
+        output_frame = LabelFrame(frame, text="Converted Units", padding="10")
+        output_frame.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
+        output_frame.grid_columnconfigure(1, weight=1)
+        
+        # Dynamically create labels for each reference electrode
+        for i, name in enumerate(self.UNIT_DIC.keys()):
+            Label(output_frame, text=f"{name}:").grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            Label(output_frame, textvariable=self.output_vars_unit[name], font=("Calibri", 12)).grid(row=i, column=1, padx=5, pady=2, sticky="w")
+        return
+    
+    def convert_units(self):
+        """The core logic for the conversion."""
+        try:
+            # 1. Get the user's input as a number
+            input_value = float(self.input_unit_variable.get())
+            
+            # 2. Get the name of the user's reference
+            input_unit = self.input_unit_var.get()
+            
+            # 3. Get the scale factor of the user's reference
+            input_unit_conv = self.UNIT_DIC[input_unit]
+
+            # 4. Convert the input potential to the no scale
+            # No unit = input value /  conversion factor
+            unitless_val = input_value * float(input_unit_conv)
+
+            # 5. Convert from unitless to all other scales and update the labels
+            # E_vs_NewRef = E_vs_NHE - E_NewRef_vs_NHE
+            for name, value_vs_unitless in self.UNIT_DIC.items():
+                converted_value = unitless_val / value_vs_unitless
+                abs_num = abs(converted_value)
+                if abs_num >= 1e4 or (abs_num < 1e-4 and abs_num != 0):
+                    # Use scientific notation
+                    self.output_vars_unit[name].set(f"{converted_value:.3e}") # Format to 4 decimal places
+                else:
+                    self.output_vars_unit[name].set(f"{converted_value:.3f}") # Format to 4 decimal places
+        
+        except ValueError:
+            # Handle cases where the input is not a valid number
+            for name in self.UNIT_DIC:
+                self.output_vars_unit[name].set("Invalid Input")
+        except Exception as e:
+            # Handle any other unexpected errors
+            print(f"An error occurred: {e}")
+            for name in self.UNIT_DIC:
+                self.output_vars_unit[name].set("Error")
+                
 class Make_Popup_GUI_macro():
     
     def __init__(self, GUI):

@@ -96,7 +96,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         menu_fun = Menu(menubar)
         menubar.add_cascade(menu=menu_fun, label='Extra Tools')
-        menu_fun.add_command(label='Open Reference Electrode Converter', command=self.ref_converter)
+        menu_fun.add_command(label='Open Reference Electrode and Unit Converter', command=self.ref_converter)
         menu_fun.add_command(label='Open Macrodisk RS Calculator', command=self.macro_RS)
         menu_fun.add_command(label='Open Microdisk RS Calculator', command=self.micro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
