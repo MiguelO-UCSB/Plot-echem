@@ -313,6 +313,10 @@ class GUISetupMethods():
         Label(NormFrame, text='Current Units: ').grid(row=4, column=0, sticky=(E))
         self.CurrentUnits_ = OptionMenuStringVar(NormFrame, Current_Units, 4, 1, (W))
         
+        Label(NormFrame, text='').grid(row=5, column=0, sticky=(E))
+        Label(NormFrame, text='Peak Analysis: ').grid(row=6, column=0, sticky=(E))
+        self.AnalyzePeak_ = OptionMenuStringVar(NormFrame, Overlay_options, 6, 1, (W,E), idx=1,)
+        
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
         inner_tabs.grid(row=1, column=0, sticky=(N,S,E,W), pady=10)
@@ -382,17 +386,17 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(ShiftsFrame, text='').grid(row=4, column=0, sticky=(E))
         
-        
-        Label(ShiftsFrame, text='Start After: ').grid(row=5, column=0, sticky=(E))
-        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 5, 1, (W,E), idx=1,)
-        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 6, 0, (E), idx=0)
-        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 6, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='Partial Import of data').grid(row=5, column=0, columnspan=2, sticky=(E))
+        Label(ShiftsFrame, text='Greater than: ').grid(row=6, column=0, sticky=(E))
+        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 6, 1, (W,E), idx=1,)
+        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 7, 0, (E), idx=0)
+        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 7, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(ShiftsFrame, text='End Before: ').grid(row=7, column=0, sticky=(E))
-        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 7, 1, (W,E), idx=1,)
-        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 8, 0, (E), idx=0)
-        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 8, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='Less than: ').grid(row=8, column=0, sticky=(E))
+        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 8, 1, (W,E), idx=1,)
+        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 9, 0, (E), idx=0)
+        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
         '''Colorbar'''

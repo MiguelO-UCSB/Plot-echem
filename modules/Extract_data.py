@@ -126,7 +126,7 @@ class extract_data():
             extracted_data = []
             file_num = 0
             
-            '''Biologic files'''
+            '''Biologic and Autolab files'''
             bio_files = sorted([os.path.join(folder, file)
                  for file in os.listdir(folder)
                  if file.endswith('.txt')])
@@ -148,6 +148,15 @@ class extract_data():
                 if get_col[0] == "Z' (Ω)":
                     freq, real_Z, imag_Z, abs_Z, phase = extract.autolab_data_PEIS(f, 'Fit')
                     print(f'\nPloting Autolab EIS fit .txt file: {f.rsplit("/", 1)[-1]}')
+                
+                if get_col[0] == "Potential applied (V)":
+                    Ts, Vs, Is, sweeps = extract.autolab_data_norm(f)
+                    print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
+                    NUM_SWEEPS = int(sweeps[-1])
+                    # NUM_SWEEPS = 1
+                    if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                        NUM_SWEEPS = 1
+                    print(f'Number of cycles: {NUM_SWEEPS}')
                     
                 if len(get_col) == 3:
                     Ts, Vs, Is = extract.bio_data_OVP(f)
@@ -327,6 +336,16 @@ class extract:
         
         return freq, real_Z, imag_Z, abs_Z, phase, sweeps
     
+    def autolab_data_norm(file):
+        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
+        
+        t = np.array(df['t'])
+        v = np.array(df['v'])
+        i = np.array(df['i'])
+        sweeps = np.array(df['cycle number'])
+        
+        return t, v, i, sweeps
+    
     def bio_data_no_cycle(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t')
         
@@ -340,11 +359,9 @@ class extract:
         df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t')
         
         t = np.array(df['t'])
-        # print(t[-1])
         v = np.array(df['v'])
         i = np.array(df['i'])*1e-3            # Conversion to amps. i.e. data in mA
         sweeps = np.array(df['cycle number'])
-        # print(sweeps[-1])
         
         return t, v, i, sweeps
     
