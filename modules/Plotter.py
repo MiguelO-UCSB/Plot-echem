@@ -107,7 +107,7 @@ class EchemFig():
         # self.load_style_file("Z:\Projects\Miguel\Spyder\style.mplstyle")
         
         # Load reference to Peak analysis object
-        self.Peak_analysis = Peak_analysis(self.ax)
+        self.Peak_analysis = Peak_analysis(self.ax, self.GUI)
         
         # Keep track of what is currently being plotted
         self.DataPoint = None
@@ -1672,95 +1672,44 @@ class EchemFig():
         print(f'Plot exported as {export_format}')
         
 class Peak_analysis():
-    def __init__(self, ax):
+    def __init__(self, ax, GUI):
         self.ax = ax
+        self.GUI = GUI
         
     def choose_most_prominent(self, peaks, props):
-        idx = [i for i, prom in enumerate(props['prominences']) 
+        idx_max = [i for i, prom in enumerate(props['prominences']) 
                if prom == max(props['prominences'])][0]
         
-        peak = np.array([peaks[idx]])
-        prop = {key: np.array([arr[idx]]) for key, arr in props.items()}
+        peak_max = np.array([peaks[idx_max]])
+        prop_max = {key: np.array([arr[idx_max]]) for key, arr in props.items()}
         
-        return peak, prop
-
-    def get_baseline_pts(self, peak, prop, I):
-        # fig, ax = plt.subplots(dpi=100)
-        # ax.plot(I, '.')
-        # ax.plot(peak, I[peak], 'ro')
-        # ax.plot([peak, peak], [I[peak], I[peak] - prop['prominences']], 'k-')
-        # ax.plot(prop['right_bases'], I[prop['right_bases']], 'ko')
-        
-        
-        right_base = prop['right_bases'][0]
-        left_base  = peak[0]
-        
-        for i in reversed(range(peak[0])):
-            val = I[i]
-            if I[peak] - val < prop['prominences']:
-                continue
-            I_slice = I[i:right_base]
-            bline = np.linspace(I[i], I[right_base], right_base - i)
-            
-            if any([val < 0 for val in I_slice - bline]):
-                left_base = i + 1
-                break
-        
-        xbline = np.linspace(left_base, right_base, right_base - left_base)
-        ybline = np.linspace(I[left_base], I[right_base], right_base - left_base)
-        
-        # self.ax.plot(xbline, ybline, 'k--')
-                
-        return left_base, right_base
-
+        return peak_max, prop_max
 
     def peak_integration(self, t, V, I):
-        half = len(I)//2
-        fcurr = I[:half]
-        bcurr = -I[half:] - min(-I[half:]) # Gets everything positive and peak pointing up
+        prominence = float(self.GUI.prominence_peak.get())
+        height = float(self.GUI.height_peak.get())
         
-        fpeaks, fprops = find_peaks(fcurr, prominence=0.5e-12)        
-        bpeaks, bprops = find_peaks(bcurr, prominence=0.5e-12)
+        peak_max, prop_max = find_peaks(I, prominence=prominence, height=height)
+        peak_min, prop_min = find_peaks(-I, prominence=prominence, height=height)        
         
-        if (len(fpeaks) == 0) or (len(bpeaks) == 0):
-            bpeak = np.array([p + half for p in bpeaks])
-            peaks = np.concatenate((fpeaks, bpeaks))
-            return 0,0
-          
-        fpeak, fprop = self.choose_most_prominent(fpeaks, fprops)
-        bpeak, bprop = self.choose_most_prominent(bpeaks, bprops)
+        if (len(peak_max) == 0) :                  # Cathodic scan
+            print('No oxidative peaks found')
+        else:
+            prom_peak_max, prom_prop_max = self.choose_most_prominent(peak_max, prop_max)
+            E_pc = V[prom_peak_max]
+            self.ax.plot(E_pc, I[prom_peak_max], 'ro')
         
-        peaks  = np.concatenate((fpeak, bpeak+half))
+        if (len(peak_min) == 0) :                 # Anodic scan
+            print('No reductive peaks found')
+        else:
+            prom_peak_min, prom_prop_min = self.choose_most_prominent(peak_min, prop_min)
+            E_pa = V[prom_peak_min]
+            self.ax.plot(E_pa, I[prom_peak_min], 'ko')
         
-        f_left, f_right = self.get_baseline_pts(fpeak, fprop, fcurr)
-        b_left, b_right = self.get_baseline_pts(bpeak, bprop, bcurr)
-        b_left  += half
-        b_right += half
-        
-        fxs = V[f_left:f_right]
-        fys = np.linspace(I[f_left], I[f_right], len(fxs))
-        
-        bxs = V[b_left:b_right]
-        bys = np.linspace(I[b_left], I[b_right], len(bxs))
-        
-        self.ax.plot(fxs, fys, 'k--')
-        self.ax.plot(bxs, bys, 'k--')
-        
-        Qf = np.trapz(I[f_left:f_right] - fys, x=fxs)
-        Qb = np.trapz(I[b_left:b_right] - bys, x=bxs)
-        
-        Qf /= np.mean(np.diff(t))
-        Qb /= np.mean(np.diff(t))
-        
-        dE = V[peaks[0]] - V[peaks[1]]
-        
-        # ax.set_xlim(-0.25, 1.05)
-        # ax.set_ylim(-3e-12, 20e-12)
-        # ax.text(-0.1, 1.5e-11, f'$\Delta$E = {dE*1000:0.1f} mV\nQf = {Qf/1e-12:0.1f} pC\nQb = {Qb/1e-12:0.1f} pC')
-        print(f'$\Delta$E = {dE*1000:0.1f} mV\nQf = {Qf/1e-12:0.1f} pC\nQb = {Qb/1e-12:0.1f} pC')
-        
-        return bpeak, bprop
-
-    
-
+        if (len(peak_max) != 0) and (len(peak_min) != 0):
+            E_half = 0.5 * (E_pa + E_pc)
+            dE = E_pa - E_pc
+            dI = I[prom_peak_max] - I[prom_peak_min]
+            
+            print(f'\u0394E = {dE[0]:.3f}\n\u0394I = {dI[0]:.3f}\nE_1/2 = {E_half[0]:.3f}')
 

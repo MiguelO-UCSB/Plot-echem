@@ -38,6 +38,15 @@ class extract_data():
                 if get_col[0] == "Z' (Ω)":
                     freq, real_Z, imag_Z, abs_Z, phase = extract.autolab_data_PEIS(file, 'Fit')
                     print(f'\nPloting Autolab EIS fit .txt file: {file.rsplit("/", 1)[-1]}')
+                
+                if get_col[0] == "Potential applied (V)":
+                    Ts, Vs, Is, sweeps = extract.autolab_data_norm(file)
+                    print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
+                    NUM_SWEEPS = int(sweeps[-1])
+                    # NUM_SWEEPS = 1
+                    if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                        NUM_SWEEPS = 1
+                    print(f'Number of cycles: {NUM_SWEEPS}')
                     
                 if len(get_col) == 3:
                     Ts, Vs, Is = extract.bio_data_OVP(file)

@@ -316,6 +316,12 @@ class GUISetupMethods():
         Label(NormFrame, text='').grid(row=5, column=0, sticky=(E))
         Label(NormFrame, text='Peak Analysis: ').grid(row=6, column=0, sticky=(E))
         self.AnalyzePeak_ = OptionMenuStringVar(NormFrame, Overlay_options, 6, 1, (W,E), idx=1,)
+        Label(NormFrame, text='Prominence: ').grid(row=7, column=0, sticky=(E))
+        self.prominence_peak = EntryStringVar(NormFrame, 10, 7, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='1e-2')
+        Label(NormFrame, text='Height: ').grid(row=7, column=2, sticky=(E))
+        self.height_peak = EntryStringVar(NormFrame, 10, 7, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='1e-2')
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
