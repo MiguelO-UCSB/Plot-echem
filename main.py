@@ -118,11 +118,11 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         ConsoleFrame.grid(row=1, column=0, columnspan=2, sticky=(N,S,E,W))
         
         # Inside console frame
-        console = Text(ConsoleFrame, width=97, height=10)
+        console = Text(ConsoleFrame, width=100, height=10)
         console.grid(row=0, column=0, sticky=(N,S,E,W))
         
         # --- Input line ---
-        self.entry = Entry(ConsoleFrame, width=97)
+        self.entry = Entry(ConsoleFrame, width=100)
         self.entry.grid(row=1, column=0, sticky=(N,S,E,W), padx=5, pady=5)
         self.entry.bind("<Return>", self._on_enter)
 
@@ -204,6 +204,8 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         # Data control traces
         self.apply_notch_filter.trace('w', self.fig_opt_changed)
+        self.AnalyzePeak_.trace('w', self.fig_opt_changed)
+        self.baseline_analysis_line_style.trace('w', self.fig_opt_changed)
         
         # Partical import data traces
         self.start_after_option.trace('w', self.fig_opt_changed)

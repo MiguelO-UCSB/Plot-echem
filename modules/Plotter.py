@@ -1,10 +1,9 @@
 import matplotlib as mpl
 from matplotlib import pyplot as plt, cm, ticker as tk
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import ListedColormap
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
@@ -105,6 +104,9 @@ class EchemFig():
 
         self.ln, = self.ax.plot([0,1],[0,1])
         # self.load_style_file("Z:\Projects\Miguel\Spyder\style.mplstyle")
+        
+        # Load reference to Peak analysis object
+        self.Peak_analysis = Peak_analysis(self.ax, self.GUI)
         
         # Keep track of what is currently being plotted
         self.DataPoint = None
@@ -317,7 +319,7 @@ class EchemFig():
         
         d = {'t':self.T, 'V':self.V, 'I':self.I}
         
-        time_units, ref_label, ref_units, current_units = IV_unit_params
+        self.time_units, ref_label, self.ref_units, self.current_units = IV_unit_params
         ylabel, xlabel = IV_selection.split(' vs ')
     
         # Decide how many colors are needed
@@ -354,19 +356,19 @@ class EchemFig():
             yvals, xvals = d[ylabel][count], d[xlabel][count]
                 
             if xlabel == 't':
-                    xunits = time_unit_conv[time_units]
+                    xunits = time_unit_conv[self.time_units]
                     xvals = xvals/xunits
             
             if xlabel == 'V':
-                    xunits = potential_unit_conv[ref_units]
+                    xunits = potential_unit_conv[self.ref_units]
                     xvals = xvals/xunits
             
             if ylabel == 'V':
-                    yunits = potential_unit_conv[ref_units]
+                    yunits = potential_unit_conv[self.ref_units]
                     yvals = yvals/yunits
             
             if ylabel == 'I':
-                    yunits = current_unit_conv[current_units]
+                    yunits = current_unit_conv[self.current_units]
                     yvals = yvals/yunits
             
             # Option to import partical data set
@@ -384,11 +386,11 @@ class EchemFig():
                     try:
                         ref_array = d[key][count]
                         if key == 't':
-                            units = time_unit_conv[time_units]
+                            units = time_unit_conv[self.time_units]
                         if key == 'V':
-                            units = potential_unit_conv[ref_units]
+                            units = potential_unit_conv[self.ref_units]
                         if key == 'I':
-                            units = current_unit_conv[current_units]
+                            units = current_unit_conv[self.current_units]
                             
                         start_mask = ref_array/units > float(cutoff)
                     except ValueError:
@@ -404,11 +406,11 @@ class EchemFig():
                     try:
                         ref_array = d[key][count]
                         if key == 't':
-                            units = time_unit_conv[time_units]
+                            units = time_unit_conv[self.time_units]
                         if key == 'V':
-                            units = potential_unit_conv[ref_units]
+                            units = potential_unit_conv[self.ref_units]
                         if key == 'I':
-                            units = current_unit_conv[current_units]
+                            units = current_unit_conv[self.current_units]
                             
                         end_mask = ref_array/units < float(cutoff)
                     except ValueError:
@@ -483,6 +485,17 @@ class EchemFig():
                          linewidth = line_sizes[color_idx], 
                          label=label)
             
+            analyze_peak = self.GUI.AnalyzePeak_.get()
+            if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Reversible':
+                self.Peak_analysis.rev_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
+                                               xvals + x_shifts[count],
+                                               yvals[:len(xvals)] + y_shifts[count])
+            
+            if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Peak Finder':
+                self.Peak_analysis.irr_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
+                                               xvals + x_shifts[count],
+                                               yvals[:len(xvals)] + y_shifts[count])
+                
             add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
             if add_inset == True:
                 try:
@@ -582,7 +595,7 @@ class EchemFig():
                 lines[3].set_visible(True)      # Upper right
                 lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             
-        axis_labels = {'t': f'Time ({time_units})', 'V': f'E vs. {ref_label} ({ref_units})', 'I': f'Current ({current_units})'}
+        axis_labels = {'t': f'Time ({self.time_units})', 'V': f'E vs. {ref_label} ({self.ref_units})', 'I': f'Current ({self.current_units})'}
         try:
             self.ax.set_box_aspect(abs(float(self.GUI.box_aspect.get())))
         except ValueError as e:
@@ -1662,8 +1675,216 @@ class EchemFig():
         self.fig.savefig(path, transparent = transparency, dpi=dpi_val, format=export_format)
         print(f'Plot exported as {export_format}')
         
+class Peak_analysis():
+    def __init__(self, ax, GUI):
+        self.ax = ax
+        self.GUI = GUI
+        
+    def choose_most_prominent(self, peaks, props):
+        idx_max = [i for i, prom in enumerate(props['prominences']) 
+               if prom == max(props['prominences'])][0]
+        
+        peak_max = np.array([peaks[idx_max]])
+        prop_max = {key: np.array([arr[idx_max]]) for key, arr in props.items()}
+        
+        return peak_max, prop_max
     
+    def split_into_segments(self, V):
+        """
+        Returns a list of (start_idx, end_idx) tuples for each sweep segment.
+        Identifies all vertices where the sweep direction changes.
+        """
+        dV = np.diff(V)
+        sign_change = np.where(np.sign(dV[:-1]) != np.sign(dV[1:]))[0] + 1
+        
+        # Build segment boundaries
+        segments = []
+        prev = 0
+        for v in sign_change:
+            segments.append((prev, v))
+            prev = v
+        segments.append((prev, len(V) - 1))  # final segment
+        # print(segments)
+        return segments
     
+    def nearest_on_same_segment(self, V, target_V, peak_idx):
+        """
+        Finds the nearest index to target_V within the SAME CV sweep segment
+        that contains the peak.
+        """
+        segments = self.split_into_segments(V)
     
+        # Find which segment the peak belongs to
+        for (start, end) in segments:
+            if start <= peak_idx <= end:
+                segment_start, segment_end = start, end
+                break
+        else:
+            raise RuntimeError("Peak index not in any segment — unexpected!")
+    
+        # Select that segment
+        V_seg = V[segment_start:segment_end+1]
+    
+        # Find nearest point within that sweep
+        local_idx = np.argmin(np.abs(V_seg - target_V))
+        global_idx = local_idx + segment_start
+    
+        return global_idx
+    
+    def draw_baseline_and_correct_peak(self, V, I, idx_base, peak_idx, pc, bc):
+        """
+        Draws a baseline from (idx_base) using the next 5 points,
+        clips the line so it ends exactly at the peak potential,
+        draws a vertical connector, returns Ip_corrected.
+        """
+        # Safety check
+        if idx_base + 5 >= len(V):
+            raise ValueError("Baseline reference point + 5 exceeds data length.")
+    
+        # Two baseline points
+        x1, y1 = V[idx_base],     I[idx_base]
+        x2, y2 = V[idx_base+5],   I[idx_base+5]
+    
+        # Linear fit (baseline slope & intercept)
+        m = (y2 - y1) / (x2 - x1)
+        b = y1 - m * x1
+    
+        # Peak position
+        Vp = V[peak_idx]
+        Ip = I[peak_idx]
+    
+        # Baseline value at peak potential
+        I_baseline_at_peak = m * Vp + b
+    
+        # Corrected Ip
+        Ip_corrected = Ip - I_baseline_at_peak
+    
+        # Plotting
+        try:
+            linewidth = float(self.GUI.baseline_analysis_line_width.get())
+        except Exception as e:
+            print(f'Linewidth set to 1 because of error: {e}')
+            linewidth = 1
+        linestyle = self.GUI.baseline_analysis_line_style.get()
 
-
+        # Draw the clipped baseline segment
+        self.ax.plot([x1, Vp], [m*x1 + b, I_baseline_at_peak],
+                color=bc, linestyle=linestyle, linewidth=linewidth)
+    
+        # Vertical connection from peak to baseline
+        self.ax.plot([Vp, Vp], [I_baseline_at_peak, Ip],
+                color=pc, linestyle=linestyle, linewidth=linewidth)
+    
+        return Ip_corrected, I_baseline_at_peak
+    
+    def rev_peak_finder(self, t, V, I):
+        self.ref_units = self.GUI.PotentialUnits_.get()
+        self.current_units = self.GUI.CurrentUnits_.get()
+        peak_color = self.GUI.peak_analysis_color.get()
+        base_color = self.GUI.baseline_analysis_color.get()
+        if not is_color_like(peak_color):
+            peak_color = 'red'
+            print('Invalid peak color. Setting default = "red"')
+        if not is_color_like(base_color):
+            peak_color = 'black'
+            print('Invalid baseline color. Setting default = "black"')
+        
+        prominence = float(self.GUI.prominence_peak.get())
+        height = float(self.GUI.height_peak.get())
+        
+        peak_max, prop_max = find_peaks(I, prominence=prominence, height=height)
+        peak_min, prop_min = find_peaks(-I, prominence=prominence, height=height)        
+        
+        if (len(peak_max) == 0) :                  # Cathodic scan
+            print('No oxidative peaks found')
+        else:
+            prom_peak_max, prom_prop_max = self.choose_most_prominent(peak_max, prop_max)
+            E_pc = V[prom_peak_max]
+            self.ax.plot(E_pc, I[prom_peak_max], 'o', color=peak_color)
+            
+            volt_ox_input = self.GUI.oxidative_baseline_voltage.get()
+            
+            if volt_ox_input != '':
+                try:
+                    volt = float(volt_ox_input)
+                    idx = self.nearest_on_same_segment(V, volt, prom_peak_max[0])
+                    self.ax.plot(V[idx], I[idx], 'o', color=base_color)
+                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
+                        idx,
+                        prom_peak_max[0],
+                        peak_color,
+                        base_color)
+                    print(f"Ip_oxidative = {Ip_corr:.3f} {self.current_units}")
+                    
+                except Exception as e:
+                    print(f'Skiping baseline correction and peak current analysis because of error: {e}')
+                    Ip_corr = None
+                    pass
+        
+        if (len(peak_min) == 0) :                 # Anodic scan
+            print('No reductive peaks found')
+        else:
+            prom_peak_min, prom_prop_min = self.choose_most_prominent(peak_min, prop_min)
+            E_pa = V[prom_peak_min]
+            self.ax.plot(E_pa, I[prom_peak_min], 'o', color=peak_color)
+            
+            volt_red_input = self.GUI.reductive_baseline_voltage.get()
+            
+            if volt_red_input != '':
+                try:
+                    volt = float(volt_red_input)
+                    idx = self.nearest_on_same_segment(V, volt, prom_peak_min[0])
+                    self.ax.plot(V[idx], I[idx], 'o', color=base_color)
+                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
+                        idx,
+                        prom_peak_min[0],
+                        peak_color,
+                        base_color)
+                    print(f"Ip_reductive = {Ip_corr:.3f} {self.current_units}")
+                    
+                except Exception as e:
+                    print(f'Skiping baseline correction and peak current analysis because of error: {e}')
+                    pass
+        
+        if (len(peak_max) != 0) and (len(peak_min) != 0):
+            E_half = 0.5 * (E_pa + E_pc)
+            dE = E_pa - E_pc
+            dI = I[prom_peak_max] - I[prom_peak_min]
+            print(f'\u0394E = {dE[0]:.3f} {self.ref_units}\n'+
+                  f'\u0394I = {dI[0]:.3f} {self.current_units}\n'+
+                  f'E½ = {E_half[0]:.3f} {self.ref_units}')
+    
+    def irr_peak_finder(self, t, V, I):
+        self.ref_units = self.GUI.PotentialUnits_.get()
+        self.current_units = self.GUI.CurrentUnits_.get()
+        peak_color = self.GUI.peak_analysis_color.get()
+        if not is_color_like(peak_color):
+            peak_color = 'red'
+            print('Invalid peak color. Setting default = "red"')
+        
+        prominence = float(self.GUI.prominence_peak.get())
+        height = float(self.GUI.height_peak.get())
+        
+        peak_max, prop_max = find_peaks(I, prominence=prominence, height=height)
+        peak_min, prop_min = find_peaks(-I, prominence=prominence, height=height)        
+        
+        if (len(peak_max) == 0) :                  # Cathodic scan
+            print('No oxidative peaks found')
+        else:
+            for idx in peak_max:
+                self.ax.plot(V[idx], I[idx], 'o', color=peak_color)
+                print(f'( {V[idx]:.3f} {self.ref_units}, {I[idx]:.3f} {self.current_units} )')
+            
+        
+        if (len(peak_min) == 0) :                 # Anodic scan
+            print('No reductive peaks found')
+        else:
+            for idx in peak_min:
+                self.ax.plot(V[idx], I[idx], 'o', color=peak_color)
+                print(f'( {V[idx]:.3f} {self.ref_units}, {I[idx]:.3f} {self.current_units} )')
+            
+            
+            
+            
+            
+            

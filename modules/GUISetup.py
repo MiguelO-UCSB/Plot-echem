@@ -28,7 +28,7 @@ Current_Units = ['A', 'mA', '\u03BCA', 'nA', 'pA', 'fA']
 
 Potential_Units = ['kV', 'V', 'mV', '\u03BCV']
 
-Reference_ = ['SCE', 'Ag/AgCl','RHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A']
+Reference_ = ['SCE', 'Ag/AgCl', 'RHE', 'SHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A']
 
 Export_format_types = ['png', 'pdf', 'svg', 'jpg']
 
@@ -85,6 +85,8 @@ linestyle_str = ['solid', 'None', 'dotted', 'dashed', 'dashdot']
 
 marker_str = ["None", ".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s",
               "p", "P", "*", "h", "H", "+", "x", "X", "D", "d", "|", "_", 0, 1, 2, 3]
+
+peak_analysis_options = ['None', 'Reversible', 'Peak Finder']
 
 def where(l, val):
     for i, value in enumerate(l):
@@ -272,7 +274,7 @@ class GUISetupMethods():
         tabs.add(VoltFrame, text='  Voltamperometric  ')
         tabs.add(EISFrame, text='  EIS  ')
         tabs.add(CustomizeFrame, text='  Customize Plot  ')
-        tabs.add(DataControlFrame, text='  Filter Data  ')
+        tabs.add(DataControlFrame, text='  Analysis  ')
         tabs.pack(expand=1, fill='both')
         
         self.MakeVoltFrame(VoltFrame)
@@ -312,6 +314,8 @@ class GUISetupMethods():
         
         Label(NormFrame, text='Current Units: ').grid(row=4, column=0, sticky=(E))
         self.CurrentUnits_ = OptionMenuStringVar(NormFrame, Current_Units, 4, 1, (W))
+        
+        Label(NormFrame, text='').grid(row=5, column=0, sticky=(E))
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
@@ -382,17 +386,17 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(ShiftsFrame, text='').grid(row=4, column=0, sticky=(E))
         
-        
-        Label(ShiftsFrame, text='Start After: ').grid(row=5, column=0, sticky=(E))
-        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 5, 1, (W,E), idx=1,)
-        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 6, 0, (E), idx=0)
-        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 6, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='Partial Import of data').grid(row=5, column=0, columnspan=2, sticky=(E))
+        Label(ShiftsFrame, text='Greater than: ').grid(row=6, column=0, sticky=(E))
+        self.start_after_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 6, 1, (W,E), idx=1,)
+        self.start_after_var = OptionMenuStringVar(ShiftsFrame, mask_options, 7, 0, (E), idx=0)
+        self.start_after_float = EntryStringVar(ShiftsFrame, 10, 7, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(ShiftsFrame, text='End Before: ').grid(row=7, column=0, sticky=(E))
-        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 7, 1, (W,E), idx=1,)
-        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 8, 0, (E), idx=0)
-        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 8, 1, (W,E), tab=True,
+        Label(ShiftsFrame, text='Less than: ').grid(row=8, column=0, sticky=(E))
+        self.end_before_option = OptionMenuStringVar(ShiftsFrame, Overlay_options, 8, 1, (W,E), idx=1,)
+        self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 9, 0, (E), idx=0)
+        self.end_before_float = EntryStringVar(ShiftsFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
         '''Colorbar'''
@@ -666,15 +670,38 @@ class GUISetupMethods():
         self.lowerright_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 18, 3, (W,E), idx=1,)
         
     def MakeDataControlFrame(self, frame):
-        # Label(frame, text='Import partial data: ').grid(row=1, column=0, sticky=(E))
-        # self.import_partial_data = OptionMenuStringVar(frame, Overlay_options, 1, 1, (W,E), idx=1,)
+        Label(frame, text='Apply Notch Filter: ').grid(row=0, column=0, sticky=(E))
+        self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 0, 1, (W,E), idx=1,)
         
-        Label(frame, text='Apply Notch Filter: ').grid(row=3, column=0, sticky=(E))
-        self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 3, 1, (W,E), idx=1,)
-        
-        Label(frame, text='Frequencies: ').grid(row=4, column=0, sticky=(E))
-        self.freqs_for_notch_filter = EntryStringVar(frame, 10, 4, 1, (W,E), tab=True,
+        Label(frame, text='Frequencies: ').grid(row=1, column=0, sticky=(E))
+        self.freqs_for_notch_filter = EntryStringVar(frame, 10, 1, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
+        Label(frame, text='').grid(row=2, column=0, sticky=(E))
+        Label(frame, text='Peak Analysis: ').grid(row=6, column=0, sticky=(E))
+        self.AnalyzePeak_ = OptionMenuStringVar(frame, peak_analysis_options, 6, 1, (W,E), idx=0,)
+        Label(frame, text='Prominence: ').grid(row=7, column=0, sticky=(E))
+        self.prominence_peak = EntryStringVar(frame, 10, 7, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='1e-2')
+        Label(frame, text='Height: ').grid(row=7, column=2, sticky=(E))
+        self.height_peak = EntryStringVar(frame, 10, 7, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='1e-2')
+        Label(frame, text='Oxidative Volt: ').grid(row=8, column=0, sticky=(E))
+        self.oxidative_baseline_voltage = EntryStringVar(frame, 10, 8, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(frame, text='Reductive Volt: ').grid(row=8, column=2, sticky=(E))
+        self.reductive_baseline_voltage = EntryStringVar(frame, 10, 8, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(frame, text='Peak Color: ').grid(row=9, column=0, sticky=(E))
+        self.peak_analysis_color = EntryStringVar(frame, 10, 9, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='red')
+        Label(frame, text='Baseline Color: ').grid(row=9, column=2, sticky=(E))
+        self.baseline_analysis_color = EntryStringVar(frame, 10, 9, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='green')
+        Label(frame, text='Line width: ').grid(row=10, column=0, sticky=(E))
+        self.baseline_analysis_line_width = EntryStringVar(frame, 10, 10, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='1')
+        Label(frame, text='Line Style: ').grid(row=10, column=2, sticky=(E))
+        self.baseline_analysis_line_style = OptionMenuStringVar(frame, linestyle_str, 10, 3, (W,E), idx=3,)
     
     def update_items(self, selected_category):
         # Clear existing options in the item menu

@@ -33,9 +33,10 @@ Supported files:
       Comma separated
       (t/s, E/V, I/A)
    
-   Autolab EIS files .txt
+   Autolab .txt
 
       Semicolon separated
+      (Potential applied (V);Time (s);WE(1).Current (A);WE(1).Potential (V);Scan;Index;Q+;Q-;Current range)
       (Index;Frequency (Hz);Z' (Ω);-Z'' (Ω);Z (Ω);-Phase (°);Time (s))
       (Z' (Ω);-Z'' (Ω);Error Z' (%);Error Z'' (%);Z (Ω);-Phase (°);Frequency (Hz);Convergence;Number of iterations;χ²)
    
