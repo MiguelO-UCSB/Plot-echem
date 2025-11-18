@@ -322,6 +322,12 @@ class GUISetupMethods():
         Label(NormFrame, text='Height: ').grid(row=7, column=2, sticky=(E))
         self.height_peak = EntryStringVar(NormFrame, 10, 7, 3, (W), tab=True,
                                                   bind_key='<Return>', default='1e-2')
+        Label(NormFrame, text='Oxidative Volt: ').grid(row=8, column=0, sticky=(E))
+        self.oxidative_baseline_voltage = EntryStringVar(NormFrame, 10, 8, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(NormFrame, text='Reductive Volt: ').grid(row=8, column=2, sticky=(E))
+        self.reductive_baseline_voltage = EntryStringVar(NormFrame, 10, 8, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='')
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)

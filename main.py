@@ -175,6 +175,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.Reference_update.trace('w', self.fig_opt_changed)
         self.PotentialUnits_.trace('w', self.fig_opt_changed)
         self.TimeUnits_.trace('w', self.fig_opt_changed)
+        self.AnalyzePeak_.trace('w', self.fig_opt_changed)
         
         # Both
         self.Overlay_.trace('w', self.fig_opt_changed)
