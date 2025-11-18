@@ -1,10 +1,9 @@
 import matplotlib as mpl
 from matplotlib import pyplot as plt, cm, ticker as tk
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, is_color_like
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import ListedColormap
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
@@ -486,9 +485,14 @@ class EchemFig():
                          linewidth = line_sizes[color_idx], 
                          label=label)
             
-            analyze_peak = bool_map.get(self.GUI.AnalyzePeak_.get().strip().lower(), False)
-            if ylabel == 'I' and xlabel == 'V' and analyze_peak == True:
-                self.Peak_analysis.peak_integration(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
+            analyze_peak = self.GUI.AnalyzePeak_.get()
+            if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Reversible':
+                self.Peak_analysis.rev_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
+                                               xvals + x_shifts[count],
+                                               yvals[:len(xvals)] + y_shifts[count])
+            
+            if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Peak Finder':
+                self.Peak_analysis.irr_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
                                                xvals + x_shifts[count],
                                                yvals[:len(xvals)] + y_shifts[count])
                 
@@ -1727,7 +1731,7 @@ class Peak_analysis():
     
         return global_idx
     
-    def draw_baseline_and_correct_peak(self, V, I, idx_base, peak_idx, color='green'):
+    def draw_baseline_and_correct_peak(self, V, I, idx_base, peak_idx, pc, bc):
         """
         Draws a baseline from (idx_base) using the next 5 points,
         clips the line so it ends exactly at the peak potential,
@@ -1756,19 +1760,34 @@ class Peak_analysis():
         Ip_corrected = Ip - I_baseline_at_peak
     
         # Plotting
+        try:
+            linewidth = float(self.GUI.baseline_analysis_line_width.get())
+        except Exception as e:
+            print(f'Linewidth set to 1 because of error: {e}')
+            linewidth = 1
+        linestyle = self.GUI.baseline_analysis_line_style.get()
+
         # Draw the clipped baseline segment
         self.ax.plot([x1, Vp], [m*x1 + b, I_baseline_at_peak],
-                color=color, linestyle=':', linewidth=1)
+                color=bc, linestyle=linestyle, linewidth=linewidth)
     
         # Vertical connection from peak to baseline
         self.ax.plot([Vp, Vp], [I_baseline_at_peak, Ip],
-                color=color, linestyle=':', linewidth=1)
+                color=pc, linestyle=linestyle, linewidth=linewidth)
     
         return Ip_corrected, I_baseline_at_peak
     
-    def peak_integration(self, t, V, I):
+    def rev_peak_finder(self, t, V, I):
         self.ref_units = self.GUI.PotentialUnits_.get()
         self.current_units = self.GUI.CurrentUnits_.get()
+        peak_color = self.GUI.peak_analysis_color.get()
+        base_color = self.GUI.baseline_analysis_color.get()
+        if not is_color_like(peak_color):
+            peak_color = 'red'
+            print('Invalid peak color. Setting default = "red"')
+        if not is_color_like(base_color):
+            peak_color = 'black'
+            print('Invalid baseline color. Setting default = "black"')
         
         prominence = float(self.GUI.prominence_peak.get())
         height = float(self.GUI.height_peak.get())
@@ -1781,7 +1800,7 @@ class Peak_analysis():
         else:
             prom_peak_max, prom_prop_max = self.choose_most_prominent(peak_max, prop_max)
             E_pc = V[prom_peak_max]
-            self.ax.plot(E_pc, I[prom_peak_max], 'ro')
+            self.ax.plot(E_pc, I[prom_peak_max], 'o', color=peak_color)
             
             volt_ox_input = self.GUI.oxidative_baseline_voltage.get()
             
@@ -1789,11 +1808,12 @@ class Peak_analysis():
                 try:
                     volt = float(volt_ox_input)
                     idx = self.nearest_on_same_segment(V, volt, prom_peak_max[0])
-                    self.ax.plot(V[idx], I[idx], 'go')
+                    self.ax.plot(V[idx], I[idx], 'o', color=base_color)
                     Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
                         idx,
                         prom_peak_max[0],
-                        color='green')
+                        peak_color,
+                        base_color)
                     print(f"Ip_oxidative = {Ip_corr:.3f} {self.current_units}")
                     
                 except Exception as e:
@@ -1806,7 +1826,7 @@ class Peak_analysis():
         else:
             prom_peak_min, prom_prop_min = self.choose_most_prominent(peak_min, prop_min)
             E_pa = V[prom_peak_min]
-            self.ax.plot(E_pa, I[prom_peak_min], 'ro')
+            self.ax.plot(E_pa, I[prom_peak_min], 'o', color=peak_color)
             
             volt_red_input = self.GUI.reductive_baseline_voltage.get()
             
@@ -1814,11 +1834,12 @@ class Peak_analysis():
                 try:
                     volt = float(volt_red_input)
                     idx = self.nearest_on_same_segment(V, volt, prom_peak_min[0])
-                    self.ax.plot(V[idx], I[idx], 'go')
+                    self.ax.plot(V[idx], I[idx], 'o', color=base_color)
                     Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
                         idx,
                         prom_peak_min[0],
-                        color='green')
+                        peak_color,
+                        base_color)
                     print(f"Ip_reductive = {Ip_corr:.3f} {self.current_units}")
                     
                 except Exception as e:
@@ -1832,7 +1853,35 @@ class Peak_analysis():
             print(f'\u0394E = {dE[0]:.3f} {self.ref_units}\n'+
                   f'\u0394I = {dI[0]:.3f} {self.current_units}\n'+
                   f'E½ = {E_half[0]:.3f} {self.ref_units}')
+    
+    def irr_peak_finder(self, t, V, I):
+        self.ref_units = self.GUI.PotentialUnits_.get()
+        self.current_units = self.GUI.CurrentUnits_.get()
+        peak_color = self.GUI.peak_analysis_color.get()
+        if not is_color_like(peak_color):
+            peak_color = 'red'
+            print('Invalid peak color. Setting default = "red"')
+        
+        prominence = float(self.GUI.prominence_peak.get())
+        height = float(self.GUI.height_peak.get())
+        
+        peak_max, prop_max = find_peaks(I, prominence=prominence, height=height)
+        peak_min, prop_min = find_peaks(-I, prominence=prominence, height=height)        
+        
+        if (len(peak_max) == 0) :                  # Cathodic scan
+            print('No oxidative peaks found')
+        else:
+            for idx in peak_max:
+                self.ax.plot(V[idx], I[idx], 'o', color=peak_color)
+                print(f'( {V[idx]:.3f} {self.ref_units}, {I[idx]:.3f} {self.current_units} )')
             
+        
+        if (len(peak_min) == 0) :                 # Anodic scan
+            print('No reductive peaks found')
+        else:
+            for idx in peak_min:
+                self.ax.plot(V[idx], I[idx], 'o', color=peak_color)
+                print(f'( {V[idx]:.3f} {self.ref_units}, {I[idx]:.3f} {self.current_units} )')
             
             
             

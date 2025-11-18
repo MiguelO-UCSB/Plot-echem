@@ -175,7 +175,6 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.Reference_update.trace('w', self.fig_opt_changed)
         self.PotentialUnits_.trace('w', self.fig_opt_changed)
         self.TimeUnits_.trace('w', self.fig_opt_changed)
-        self.AnalyzePeak_.trace('w', self.fig_opt_changed)
         
         # Both
         self.Overlay_.trace('w', self.fig_opt_changed)
@@ -205,6 +204,8 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         # Data control traces
         self.apply_notch_filter.trace('w', self.fig_opt_changed)
+        self.AnalyzePeak_.trace('w', self.fig_opt_changed)
+        self.baseline_analysis_line_style.trace('w', self.fig_opt_changed)
         
         # Partical import data traces
         self.start_after_option.trace('w', self.fig_opt_changed)
