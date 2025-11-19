@@ -98,6 +98,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         menubar.add_cascade(menu=menu_fun, label='Extra Tools')
         menu_fun.add_command(label='Open Reference Electrode and Unit Converter', command=self.ref_converter)
         menu_fun.add_command(label='Open Macrodisk RS Calculator', command=self.macro_RS)
+        menu_fun.add_command(label='Open Levich Calculator', command=self.macro_RS_RDE)
         menu_fun.add_command(label='Open Microdisk RS Calculator', command=self.micro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
         
@@ -324,6 +325,11 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         if not hasattr(self, 'Macro_RS'):
             self.Popup_Generator = Popup_Generator()
         self.Popup_Generator.get(self, 'Macro_RS', None)
+    
+    def macro_RS_RDE(self):
+        if not hasattr(self, 'Macro_RS_RDE'):
+            self.Popup_Generator = Popup_Generator()
+        self.Popup_Generator.get(self, 'Macro_RS_RDE', None)
     
     def micro_RS(self):
         if not hasattr(self, 'Micro_RS'):
