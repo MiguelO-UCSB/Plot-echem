@@ -36,6 +36,7 @@ class Make_Popup_GUI_Figure():
         self.ax_fft = self.fig2.add_subplot(111)
         self.make_popup()
         
+        
     def make_popup(self):
         self.popup = Toplevel()
         self.popup.title("Fourier Transform Data")
@@ -67,13 +68,8 @@ class FTdataPopup(Make_Popup_GUI_Figure):
     def __init__(self, GUI, echem_data):
         self.data = echem_data
         super().__init__(GUI=GUI)
-        self.draw()
-    
-    def fill_leftframe(self):
-        # Put relevant buttons in self.leftframe
-        frame = self.leftframe
         
-        if not hasattr(self, 'dpi_field'):
+        if not hasattr(self, 'div_const'):
             # Will already have these attributes if it's being reinitialized
             self.prominence = StringVar(value='0.1')
             self.distance = StringVar(value='10')
@@ -90,6 +86,13 @@ class FTdataPopup(Make_Popup_GUI_Figure):
             self.echem_ymaxval = StringVar(value='')
             self.n_yticks = StringVar(value='')
             self.div_const = StringVar(value='1')
+        
+        self.fill_leftframe()
+        self.draw()
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe
         
         '''Make Frame for Voltamperometric Tab'''
         
