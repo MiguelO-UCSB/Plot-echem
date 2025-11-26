@@ -17,7 +17,7 @@ Open main.py in your favorite Python environment (Example: Spyder) or run with A
 
 Run the program in the environment.
 
-![App Screenshot](https://github.com/MiguelO-UCSB/Plot-echem/blob/main/Other/GUI_example.png?raw=true)
+![App Screenshot](https://github.com/MiguelO-UCSB/Plot-echem/blob/main/assets/GUI_example.png?raw=true)
 
 Supported files:
 
