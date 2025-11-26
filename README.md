@@ -4,7 +4,7 @@ A Python graphical user interface designed to plot electrochemistry files for th
 
 ## Installation
 
-Clone the repo with GitHub.
+Clone the repo from GitHub using Git or download the ZIP file.
 
 ```
   git clone https://github.com/MiguelO-UCSB/Plot-echem
