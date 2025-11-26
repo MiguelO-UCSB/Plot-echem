@@ -160,7 +160,7 @@ class GUISetupMethods():
         # Copy to Clipboard Button
         Button(frame, text="Copy Figure to Clipboard", width=36,
                command=self.copy_figure_to_clipboard).grid(
-                   row=0, column=1, sticky="we")
+                   row=0, column=1, sticky="we", pady=10)
         return
     
     def MakePlotParamsFrame(self, frame):
@@ -179,17 +179,12 @@ class GUISetupMethods():
                                                 row=1, col=1, sticky=(E),
                                                 return_widget=True)
         Label(frame, text='   ').grid(row=1, column=2, sticky=(E))
-        Label(frame, text='   EIS type: ').grid(row=1, column=3, sticky=(E))
+        Label(frame, text='   EIS type: ').grid(row=1, column=3, sticky=(E), pady=10)
         # EIS view options
         self.EIS_view_selection = OptionMenuStringVar(frame, EIS_options, 1, 4, (E))  
-        
-        Label(frame, text='').grid(row=2, column=0, sticky=(E))
                                
-    def MakeEchemFrame(self, frame, ResizeFrame):
-        # Track whether we're resizing automatically (window) or manually (entry)
-        self.resize_mode = "auto"  # can be 'auto' or 'manual'
-        
-        self.fig = plt.Figure(figsize=(4,4), dpi=110)
+    def MakeEchemFrame(self, frame, ResizeFrame):   
+        self.fig = plt.Figure(figsize=(4,4), dpi=150)
         self.fig.add_subplot(111)
         
         self.MakeResizeFrame(ResizeFrame)     
@@ -197,10 +192,10 @@ class GUISetupMethods():
         # Canvas setup               
         self.canvas_agg  = FigureCanvasTkAgg(self.fig, master=frame)
         self.canvas_widget = self.canvas_agg.get_tk_widget()
-        self.canvas_widget.grid(row=5, column=0, columnspan=4, sticky="nsew")
+        self.canvas_widget.grid(row=0, column=0, sticky="nsew")
         
         # Allow figure area to expand with window
-        frame.rowconfigure(4, weight=1)
+        frame.rowconfigure(5, weight=1)
         for col in range(4):
             frame.columnconfigure(col, weight=1)
         
@@ -210,59 +205,48 @@ class GUISetupMethods():
     
         # Bind window/frame size changes
         self.canvas_widget.bind("<Configure>", self.on_canvas_resize)
+        
+        # --- FIXED: Allow canvas widget to expand ---
+        self.canvas_widget.grid_rowconfigure(0, weight=1)
+        self.canvas_widget.grid_columnconfigure(0, weight=1)
     
     def MakeResizeFrame(self, frame):
         # Variables for entry boxes
         self.plot_width = tk.StringVar(value="4")
         self.plot_height = tk.StringVar(value="4")
-        
+    
+        # Trace callbacks
+        self.plot_width.trace_add("write", self.on_entry_resize)
+        self.plot_height.trace_add("write", self.on_entry_resize)
+    
         # Labels and entries
         Label(frame, text="  Width (in): ").grid(row=3, column=0)
         Entry(frame, textvariable=self.plot_width, width=10).grid(row=3, column=1, sticky=E)
         Label(frame, text='     ').grid(row=3, column=2, sticky=(E))
-        Label(frame, text="  Height (in): ").grid(row=3, column=3)
+        Label(frame, text="  Height (in): ").grid(row=3, column=3, pady=10)
         Entry(frame, textvariable=self.plot_height, width=10).grid(row=3, column=4, sticky=E)
-        
-        # Reset button
-        Button(frame, text="Reset Auto Resize", command=self.reset_to_auto).grid(
-            row=3, column=5, padx=5)
-        
-    def on_entry_resize(self, *args):
-        """Resize figure when entries are changed (switch to manual mode)."""
-        try:
-            w_inches = float(self.plot_width.get())
-            h_inches = float(self.plot_height.get())
-            self.resize_mode = "manual"
-            self.fig.set_size_inches(w_inches, h_inches, forward=True)
-            
-            px_width = int(w_inches * self.fig.get_dpi())
-            px_height = int(h_inches * self.fig.get_dpi())
-            self.canvas_widget.config(width=px_width, height=px_height)
-            
-            self.canvas_widget.update_idletasks()  # ensure widget size is up-to-date
-            self.fig.tight_layout()  # <-- ensures plot elements fit
-            self.canvas_agg.draw()
-        except ValueError:
-            pass  # Ignore if entry is empty or invalid
-
-    def on_canvas_resize(self, event):
-        """Resize figure when window/frame changes (only in auto mode)."""
-        if self.resize_mode == "auto":
-            w_inches = event.width / self.fig.get_dpi()
-            h_inches = event.height / self.fig.get_dpi()
-            self.fig.set_size_inches(w_inches, h_inches, forward=True)
-            
-            px_width = int(w_inches * self.fig.get_dpi())
-            px_height = int(h_inches * self.fig.get_dpi())
-            self.canvas_widget.config(width=px_width, height=px_height)
-            
-            self.canvas_widget.update_idletasks()  # ensure widget size is up-to-date
-            self.fig.tight_layout()  # <-- ensures plot elements fit
-            self.canvas_agg.draw()
     
-    def reset_to_auto(self):
-        """Manually switch back to auto mode."""
-        self.resize_mode = "auto"
+    def on_canvas_resize(self, event):
+        """Resize matplotlib figure to match canvas size exactly."""
+        if event.width < 10 or event.height < 10:
+            return
+        
+        dpi = self.fig.get_dpi()
+        w_in = event.width / dpi
+        h_in = event.height / dpi
+    
+        self.fig.set_size_inches(w_in, h_in, forward=False)
+        self.canvas_agg.draw_idle()
+    
+    def on_entry_resize(self, *args):
+        """User typed a manual width/height → update figure size."""
+        try:
+            w = float(self.plot_width.get())
+            h = float(self.plot_height.get())
+            self.fig.set_size_inches(w, h, forward=True)
+            self.canvas_agg.draw_idle()
+        except ValueError:
+            pass
     
     def MakePlotTypeFrame(self, frame):
         tabs = Notebook(frame)
@@ -270,27 +254,21 @@ class GUISetupMethods():
         EISFrame = Frame(tabs)
         CustomizeFrame  = Frame(tabs)
         DataControlFrame = Frame(tabs)
+        ExportFrame = Frame(tabs)
         
         tabs.add(VoltFrame, text='  Voltamperometric  ')
         tabs.add(EISFrame, text='  EIS  ')
         tabs.add(CustomizeFrame, text='  Customize Plot  ')
         tabs.add(DataControlFrame, text='  Analysis  ')
+        tabs.add(ExportFrame, text='  Export  ')
         tabs.pack(expand=1, fill='both')
         
         self.MakeVoltFrame(VoltFrame)
         self.MakeEISFrame(EISFrame)
         self.MakeCustomizeFrame(CustomizeFrame)
         self.MakeDataControlFrame(DataControlFrame)
-        
-    def MakeSettingsFrame(self, frame):
-        tabs = Notebook(frame)
-        ExportFrame = Frame(tabs)
-        
-        
-        tabs.add(ExportFrame, text='  Export  ')
-        tabs.pack(expand=1, fill='both')
-        
         self.MakeExportSettingsFrame(ExportFrame)
+        
         
     def MakeVoltFrame(self, frame):
         '''Make Frame for Voltamperometric Tab'''

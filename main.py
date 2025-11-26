@@ -74,6 +74,9 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
     Graphical user interface
     '''
     def __init__(self):
+        ##########################################
+        #             MAIN GUI LAYOUT            # 
+        ##########################################
         self.root = root
         self.params = {} # master dict to store all parameters
                 
@@ -82,8 +85,25 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         root.attributes('-topmost', 0) 
         root.option_add('*tearOff', False)
         
+        # --------- ICON LOADING ---------
+        if sys.platform.startswith("win"):
+            # Windows requires .ico
+            logo_path = os.path.join(script_dir, "assets/GUI logo.ico")
+            root.iconbitmap(logo_path)
         
-        # Menu bar
+        elif sys.platform == "darwin" or sys.platform.startswith("linux"):
+            # PNG works for macOS + Linux
+            try:
+                logo_path = os.path.join(script_dir, "assets/GUI logo.png")
+                photo = PhotoImage(file=logo_path)
+                root.iconphoto(False, photo)
+            except TclError:
+                print("icon file not loaded")
+        
+        else:
+            print("⚠ Icon not supported on this platform.")
+        
+        # --------- MENU BAR ---------
         menubar         = Menu(root)
         root['menu']    = menubar
         
@@ -102,28 +122,58 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         menu_fun.add_command(label='Open Microdisk RS Calculator', command=self.micro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
         
-        ### SET UP FRAMES ###
+        ##########################################
+        #         MAIN LAYOUT STARTS HERE        #
+        ##########################################
         
-        # Root has 2 rows: top content + console
-        self.root.rowconfigure(0, weight=1)
-        self.root.rowconfigure(1, weight=0)
-        self.root.columnconfigure(0, weight=0)
-        self.root.columnconfigure(1, weight=1)
+        # Root window stretches
+        root.rowconfigure(0, weight=1)
+        root.rowconfigure(1, weight=0)
+        root.columnconfigure(0, weight=1)
         
-        leftpanel  = Frame(self.root)
-        rightpanel = Frame(self.root)
-        ConsoleFrame = Frame(self.root)
+        # ======= PANED WINDOW (Horizontal split) =======
+        main_pane = PanedWindow(root, orient="horizontal")
+        main_pane.grid(row=0, column=0, sticky="nsew")
         
-        leftpanel.grid(row=0, column=0, sticky=(N,S,E,W))
-        rightpanel.grid(row=0, column=1, sticky=(N,S,E,W))
-        ConsoleFrame.grid(row=1, column=0, columnspan=2, sticky=(N,S,E,W))
+        # -------- LEFT PANEL --------
+        leftpanel  = Frame(main_pane)
+        leftpanel.rowconfigure(0, weight=1)
+        leftpanel.columnconfigure(0, weight=1)
         
-        # Inside console frame
+        UpdateButtonFrame = Frame(leftpanel)
+        PlotParamsFrame = Frame(leftpanel)
+        ResizeFrame = Frame(leftpanel)
+        PlotTypeFrame = Frame(leftpanel)
+        
+        UpdateButtonFrame.grid(row=0, column=0, sticky=(N,S,E,W))
+        PlotParamsFrame.grid(row=1, column=0, sticky=(N,S,E,W))
+        ResizeFrame.grid(row=2, column=0, sticky=(N,S,E,W))
+        PlotTypeFrame.grid(row=3, column=0, sticky=(N,S,E,W))
+        
+        main_pane.add(leftpanel)   # adjustable width
+        
+        # -------- RIGHT PANEL --------
+        rightpanel = Frame(main_pane)
+        rightpanel.rowconfigure(1, weight=1)  # EchemFrame grows
+        rightpanel.columnconfigure(0, weight=1)
+        
+        EchemFrame   = Frame(rightpanel)
+        
+        EchemFrame.grid(row=0, column=0, sticky=(N,S,E,W))
+        
+        main_pane.add(rightpanel)
+        
+        # -------- CONSOLE FRAME --------
+        ConsoleFrame = Frame(root)
+        ConsoleFrame.grid(row=1, column=0, sticky="nsew")
+        
+        ConsoleFrame.columnconfigure(0, weight=1)
+        ConsoleFrame.rowconfigure(0, weight=1)
+        
         console = Text(ConsoleFrame, width=100, height=10)
         console.grid(row=0, column=0, sticky=(N,S,E,W))
         
-        # --- Input line ---
-        self.entry = Entry(ConsoleFrame, width=100)
+        self.entry = Entry(ConsoleFrame)
         self.entry.grid(row=1, column=0, sticky=(N,S,E,W), padx=5, pady=5)
         self.entry.bind("<Return>", self._on_enter)
 
@@ -131,31 +181,10 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self._input_var = None
         self._input_value = None
         
-        # Inside left panel
-        PlotTypeFrame = Frame(leftpanel)
-        SettingsFrame   = Frame(leftpanel)
         
-        PlotTypeFrame.grid(row=2, column=0, sticky=(N,S,E,W))
-        SettingsFrame.grid(row=3, column=0, sticky=(N,S,E,W))
-        
-        # Inside right panel — use grid consistently here
-        rightpanel.rowconfigure(0, weight=1)
-        rightpanel.columnconfigure(1, weight=1)
-        
-        UpdateButtonFrame = Frame(rightpanel)
-        PlotParamsFrame = Frame(rightpanel)
-        EchemFrame   = Frame(rightpanel)
-        ResizeFrame = Frame(rightpanel)
-        ZoomFrame = Frame(rightpanel)
-        
-        UpdateButtonFrame.grid(row=0, column=1, sticky=(N,S,E,W))
-        PlotParamsFrame.grid(row=1, column=1, sticky=(N,S,E,W))
-        ResizeFrame.grid(row=2, column=1, sticky=(N,S,E,W))
-        EchemFrame.grid(row=3, column=1, sticky=(N,S,E,W))
-        ZoomFrame.grid(row=4, column=1, sticky=(N,S,E,W))
-        
-        EchemFrame.rowconfigure(0, weight=1)
-        EchemFrame.columnconfigure(0, weight=1)
+        ############################################
+        #       CALL EXISTING BUILD FUNCTIONS      #
+        ############################################
         
         # All inherited from GUISetupMethods
         self.MakeEchemFrame(EchemFrame, ResizeFrame)
@@ -164,9 +193,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.EchemFig = EchemFig(self.fig, self)
         self.MakePlotParamsFrame(PlotParamsFrame)
         self.MakeUpdateFrame(UpdateButtonFrame)
-        
         self.MakePlotTypeFrame(PlotTypeFrame)
-        self.MakeSettingsFrame(SettingsFrame)
         
         self.fig2selection.trace('w', self.fig_opt_changed)
         self.fig2ptselection.trace('w', self.fig_opt_changed)
