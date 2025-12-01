@@ -76,6 +76,15 @@ class extract_data():
                     if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
+                
+                if len(get_col) == 6:
+                    Ts, Vs, Is, sweeps = extract.bio_data_5norm(file)
+                    print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
+                    NUM_SWEEPS = int(sweeps[-1])
+                    # NUM_SWEEPS = 1
+                    if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                        NUM_SWEEPS = 1
+                    print(f'Number of cycles: {NUM_SWEEPS}')
             
             if file.endswith('.mat'):
                 while True:
@@ -198,6 +207,15 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
+                if len(get_col) == 6:
+                    Ts, Vs, Is, sweeps = extract.bio_data_5norm(f)
+                    print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
+                    NUM_SWEEPS = int(sweeps[-1])
+                    # NUM_SWEEPS = 1
+                    if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
+                        NUM_SWEEPS = 1
+                    print(f'Number of cycles: {NUM_SWEEPS}')
+                    
                 if Ts is not None:
                     ##Split file by number of sweeps
                     T, V, I = (np.array_split(Ts, NUM_SWEEPS),
@@ -366,6 +384,16 @@ class extract:
     
     def bio_data_norm(file):
         df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t')
+        
+        t = np.array(df['t'])
+        v = np.array(df['v'])
+        i = np.array(df['i'])*1e-3            # Conversion to amps. i.e. data in mA
+        sweeps = np.array(df['cycle number'])
+        
+        return t, v, i, sweeps
+    
+    def bio_data_5norm(file):
+        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number', 'ns'), skiprows=1, sep='\t')
         
         t = np.array(df['t'])
         v = np.array(df['v'])

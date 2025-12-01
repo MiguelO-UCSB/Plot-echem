@@ -17,6 +17,7 @@ Overlay_options = ['True', 'False']
 Export_format_types = ['png', 'pdf', 'svg', 'jpg']
 Rev_or_Irr = ['Reversible', 'Irreversible']
 Micro_or_Nanoparticle = ['Microelectrode', 'Nanoparticle on Microelectrode']
+Ring_or_Disk = ['Limiting Disk Current', 'Limiting Ring Current']
 
 def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = StringVar()
@@ -34,6 +35,7 @@ class Make_Popup_GUI_Figure():
         # self.ax_signal = self.fig2.add_subplot(211)
         self.ax_fft = self.fig2.add_subplot(111)
         self.make_popup()
+        
         
     def make_popup(self):
         self.popup = Toplevel()
@@ -66,13 +68,8 @@ class FTdataPopup(Make_Popup_GUI_Figure):
     def __init__(self, GUI, echem_data):
         self.data = echem_data
         super().__init__(GUI=GUI)
-        self.draw()
-    
-    def fill_leftframe(self):
-        # Put relevant buttons in self.leftframe
-        frame = self.leftframe
         
-        if not hasattr(self, 'dpi_field'):
+        if not hasattr(self, 'div_const'):
             # Will already have these attributes if it's being reinitialized
             self.prominence = StringVar(value='0.1')
             self.distance = StringVar(value='10')
@@ -89,6 +86,13 @@ class FTdataPopup(Make_Popup_GUI_Figure):
             self.echem_ymaxval = StringVar(value='')
             self.n_yticks = StringVar(value='')
             self.div_const = StringVar(value='1')
+        
+        self.fill_leftframe()
+        self.draw()
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe
         
         '''Make Frame for Voltamperometric Tab'''
         
@@ -819,7 +823,7 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         Entry(input_frame_MacroRSPopup, textvariable=self.diam_var, width=10).grid(row=9, column=1, sticky="ew")
         Label(input_frame_MacroRSPopup, text="mm").grid(row=9, column=2, sticky="w")
 
-        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=10, column=0, columnspan=2, pady=6, sticky="ew")
+        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=10, column=0, columnspan=3, pady=6, sticky="ew")
         
         # ---------------- Output widgets ----------------
         self.output_labels = {}
@@ -886,6 +890,223 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         self.output_labels["Concentration"].config(text=f"{C_calc/1e-3:.3e} M, {C_calc*1e6:.3} mM")
         self.output_labels["Area"].config(text=f"{A_calc:.3e} cm²")
         self.output_labels["Diameter"].config(text=f"{np.sqrt(A_calc/np.pi)*20:.3} mm")
+        self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
+
+class Make_Popup_GUI_macro_levich():
+    
+    def __init__(self, GUI):
+        self.GUI = GUI
+        self.make_popup()
+        
+        self.F = 96485.33212  # C/mol
+        
+        # --- Diffusion coefficient dictionary (cm^2/s) ---
+        self.redox_dict = {
+            "Ru(NH₃)₆³⁺/²⁺": 8.43e-6,
+            "FcMeOH": 7.60e-6,
+            "Fe(CN)₆³⁻/⁴⁻": 6.67e-6,
+            "O₂": 2e-5,
+            "H⁺": 9.8e-5,
+            "H₂": 5.13e-5,
+            "Cu²⁺": 7.33e-6,
+            "IPA": 1.06e-6,
+        }
+        
+        self.redox_dict_n_vals = {
+            "Ru(NH₃)₆³⁺/²⁺": 1,
+            "FcMeOH": 1,
+            "Fe(CN)₆³⁻/⁴⁻": 1,
+            "O₂": 2,
+            "H⁺": 2,
+            "H₂": 2,
+            "Cu²⁺": 2,
+            "IPA": 2,
+        }
+        
+        # --- Tkinter String Variables ---
+        # These variables are linked to widgets to get/set their values easily.
+        if not hasattr(self, 'temp_var'):
+            # Will already have these attributes if it's being reinitialized
+            self.rotation_rate = DoubleVar(value=100)        # rpm
+            self.viscosity = DoubleVar(value=0.01)
+            self.redox_var = StringVar(value=list(self.redox_dict.keys())[0])
+            self.levich_option = StringVar(value=Ring_or_Disk[0])
+            self.limitingcurrent_var = DoubleVar(value=1.221e-5) # A
+            self.conc_var = DoubleVar(value=1e-3)            # M
+            self.diam_var = DoubleVar(value=3.0)             # mm
+            self.inner_rad_ring_var = DoubleVar(value=1)     # cm
+            self.outer_rad_ring_var = DoubleVar(value=3)     # cm
+        
+        self.fill_leftframe()
+        
+    def make_popup(self):
+        self.popup = Toplevel()
+        self.popup.title("Macrodisk and Ring Levich Calculator")
+        self.leftframe_MacroRSPopup  = Frame(self.popup)
+        self.leftframe_MacroRSPopup.grid(row=0, column=0)
+    
+    
+class MacroLevichPopup(Make_Popup_GUI_macro_levich):
+    
+    def __init__(self, GUI):
+        super().__init__(GUI=GUI)
+    
+    def fill_leftframe(self):
+        # Put relevant buttons in self.leftframe
+        frame = self.leftframe_MacroRSPopup
+        
+        # --- Reversible Image ---
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        macro_path = os.path.join(script_dir, "Images", "Ring_RDE_macro.png")
+        macro_path_irr = os.path.join(script_dir, "Images", "Disk_RDE_macro.png")
+
+        image = Image.open(macro_path)
+        w, h = image.size
+        image = image.resize((int(w * 0.28), int(h * 0.28)), Image.LANCZOS)  # 32% size
+        image.load()  # force decode
+        image = image.convert("RGBA")
+        self.photo_image_rev = ImageTk.PhotoImage(image)
+        
+        image = Image.open(macro_path_irr)
+        w, h = image.size
+        image = image.resize((int(w * 0.28), int(h * 0.28)), Image.LANCZOS)  # 32% size
+        image.load()  # force decode
+        image = image.convert("RGBA")
+        self.photo_image_irr = ImageTk.PhotoImage(image)
+        
+        Label(frame, text="Limiting Ring Current").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, image=self.photo_image_rev).grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        text1 = ", where i is the limiting current, n is the number of electrons, F is Faraday’s constant, D is the diffusion coefficient of reactants"
+        Label(frame, text=text1).grid(row=2, column=1, padx=5, pady=5, sticky="sw")
+        text2 = "with the bulk concentration of [A]bulk, ω is the angular rotation rate, and υ is the kinematic viscosity."
+        Label(frame, text=text2).grid(row=3, column=1, padx=5, pady=5, sticky="nw")
+        Label(frame, text="Limiting Disk Current").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, image=self.photo_image_irr).grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        
+        # ---------------- Frames ----------------
+        input_frame_MacroRSPopup = LabelFrame(frame, text="Levich Inputs")
+        input_frame_MacroRSPopup.grid(row=5, column=0, padx=5, pady=5, sticky="nsew")
+        
+        output_frame_MacroRSPopup = LabelFrame(frame, text="Calculated Outputs")
+        output_frame_MacroRSPopup.grid(row=5, column=1, padx=5, pady=5, sticky="nsew")
+        
+        # ---------------- Tkinter variables ----------------
+        self.diff_var = DoubleVar(value=list(self.redox_dict.values())[0])
+        self.n_var = DoubleVar(value=list(self.redox_dict_n_vals.values())[0])
+        
+        # ---------------- Input widgets ----------------
+        Label(input_frame_MacroRSPopup, text="Option:").grid(row=0, column=0, sticky="e")
+        OptionMenu(input_frame_MacroRSPopup, self.levich_option, Ring_or_Disk[0], *Ring_or_Disk).grid(row=0, column=1, sticky="ew")
+        
+        Label(input_frame_MacroRSPopup, text="Redox Probe:").grid(row=1, column=0, sticky="e")
+        
+        redox_options = list(self.redox_dict.keys()) + ["Custom"]
+        redox_menu = Combobox(input_frame_MacroRSPopup, textvariable=self.redox_var,
+                              values=redox_options, state="readonly")
+        redox_menu.grid(row=1, column=1, sticky="ew")
+        redox_menu.bind("<<ComboboxSelected>>", self.update_diff_entry)
+
+        Label(input_frame_MacroRSPopup, text="Diffusion coeff. - D:").grid(row=2, column=0, sticky="e")
+        self.diff_entry = Entry(input_frame_MacroRSPopup, textvariable=self.diff_var, width=10, state="disabled")
+        self.diff_entry.grid(row=2, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="cm²/s").grid(row=2, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Number of electrons - n: ").grid(row=3, column=0, sticky="e")
+        self.n_entry = Entry(input_frame_MacroRSPopup, textvariable=self.n_var, width=10, state="disabled")
+        self.n_entry.grid(row=3, column=1, sticky="ew")
+        
+        Label(input_frame_MacroRSPopup, text="Rotation rate - ω:").grid(row=4, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.rotation_rate, width=10).grid(row=4, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="rpm").grid(row=4, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Kinematic Viscosity - υ:").grid(row=5, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.viscosity, width=10).grid(row=5, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="cm²/s").grid(row=5, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Limiting current - i:").grid(row=6, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.limitingcurrent_var, width=10).grid(row=6, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="A").grid(row=6, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Concentration - [A]bulk :").grid(row=7, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.conc_var, width=10).grid(row=7, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="M").grid(row=7, column=2, sticky="w")
+
+        Label(input_frame_MacroRSPopup, text="Diameter of Disk:").grid(row=8, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.diam_var, width=10).grid(row=8, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="mm").grid(row=8, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Inner Radius of Ring:").grid(row=9, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.inner_rad_ring_var, width=10).grid(row=9, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="cm").grid(row=9, column=2, sticky="w")
+        
+        Label(input_frame_MacroRSPopup, text="Outer Radius of Ring:").grid(row=10, column=0, sticky="e")
+        Entry(input_frame_MacroRSPopup, textvariable=self.outer_rad_ring_var, width=10).grid(row=10, column=1, sticky="ew")
+        Label(input_frame_MacroRSPopup, text="cm").grid(row=10, column=2, sticky="w")
+        
+        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=11, column=0, columnspan=3, pady=6, sticky="ew")
+        
+        # ---------------- Output widgets ----------------
+        self.output_labels = {}
+        for i, label in enumerate(["Limiting current", "Concentration", "Diffusion coeff."]):
+            Label(output_frame_MacroRSPopup, text=label + ":").grid(row=i, column=0, sticky="e")
+            lbl = Label(output_frame_MacroRSPopup, text="—", font=("Calibri", 12))
+            lbl.grid(row=i, column=1, sticky="w")
+            self.output_labels[label] = lbl
+    
+    def update_diff_entry(self, event=None):
+        """Update diffusion coefficient entry based on selected probe."""
+        selected = self.redox_var.get()
+        if selected == "Custom":
+            self.diff_entry.config(state="normal")
+            self.n_entry.config(state="normal")
+        else:
+            D = self.redox_dict.get(selected, 0)
+            self.diff_var.set(D)
+            self.diff_entry.config(state="disabled")
+            
+            n = self.redox_dict_n_vals.get(selected, 0)
+            self.n_var.set(n)
+            self.n_entry.config(state="disabled")
+            
+    def calculate_all(self):
+        try:
+            w = float(self.rotation_rate.get())
+            D = float(self.diff_var.get())
+            n = float(self.n_var.get())
+            v = float(self.viscosity.get())
+            C_M = float(self.conc_var.get())
+            inner_ring = float(self.inner_rad_ring_var.get())
+            outer_ring = float(self.outer_rad_ring_var.get())
+            d_mm = float(self.diam_var.get())
+            I = float(self.limitingcurrent_var.get())
+        except ValueError:
+            print("Invalid input detected.")
+            return
+
+        if D is None or w <= 0 or C_M <= 0 or v <= 0 or d_mm <= 0 or inner_ring <= 0 or outer_ring <= 0 or outer_ring <= inner_ring:
+            print("Invalid or missing values.")
+            return
+
+        # Convert and compute
+        C = C_M * 1e-3  # M → mol/cm³
+        r_cm = (d_mm / 2) / 10.0
+        A = np.pi * r_cm**2
+        A_ring = np.pi * (outer_ring**3 - inner_ring**3)**(2/3)
+        w_rad_per_sec = w * 2* np.pi / 60
+        
+        if self.levich_option.get() == 'Limiting Disk Current':
+            Ip_calc = 0.62 * n * self.F * A * D**(2/3) * w_rad_per_sec**(1/2) * v**(-1/6) * C
+            C_calc = I / (0.62 * n * self.F * A * D**(2/3) * w_rad_per_sec**(1/2) * v**(-1/6))
+            D_calc = (I / (0.62 * n * self.F * A * w_rad_per_sec**(1/2) * v**(-1/6) * C))**(3/2)
+            
+        if self.levich_option.get() == 'Limiting Ring Current':
+            Ip_calc = 0.62 * n * self.F * A_ring * D**(2/3) * w_rad_per_sec**(1/2) * v**(-1/6) * C
+            C_calc = I / (0.62 * n * self.F * A_ring * D**(2/3) * w_rad_per_sec**(1/2) * v**(-1/6))
+            D_calc = (I / (0.62 * n * self.F * A_ring * w_rad_per_sec**(1/2) * v**(-1/6) * C))**(3/2)
+            
+        # Update output fields
+        self.output_labels["Limiting current"].config(text=f"{Ip_calc:.3e} A, {Ip_calc*1000:.3} mA, {Ip_calc*1000000:.3} μA")
+        self.output_labels["Concentration"].config(text=f"{C_calc/1e-3:.3e} M, {C_calc*1e6:.3} mM")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
         
 class Make_Popup_GUI_micro():
@@ -1013,7 +1234,7 @@ class MicroRSPopup(Make_Popup_GUI_micro):
         Entry(input_frame_MacroRSPopup, textvariable=self.radius_nano_var, width=10).grid(row=10, column=1, sticky="ew")
         Label(input_frame_MacroRSPopup, text="nm").grid(row=10, column=2, sticky="w")
 
-        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=11, column=0, columnspan=2, pady=6, sticky="ew")
+        Button(input_frame_MacroRSPopup, text="Calculate", command=self.calculate_all).grid(row=11, column=0, columnspan=3, pady=6, sticky="ew")
         
         # ---------------- Output widgets ----------------
         self.output_labels = {}
@@ -1088,6 +1309,7 @@ class Popup_Generator():
         self.FTdataPopup = None
         self.MacroRSPopup = None
         self.MicroRSPopup = None
+        self.MacroLevichPopup = None
     
     def get(self, GUI, popup_type, data):
         '''
@@ -1115,6 +1337,14 @@ class Popup_Generator():
                 return self.MacroRSPopup.__init__(GUI)
             # print('Test First Open')
             self.MacroRSPopup = MacroRSPopup(GUI)
+            return
+        
+        if popup_type == 'Macro_RS_RDE':
+            if self.MacroLevichPopup:
+                # print('Test Reload')
+                return self.MacroLevichPopup.__init__(GUI)
+            # print('Test First Open')
+            self.MacroLevichPopup = MacroLevichPopup(GUI)
             return
         
         if popup_type == 'Micro_RS':

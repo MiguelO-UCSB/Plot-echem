@@ -12,7 +12,7 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
 from scipy import optimize, signal
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, savgol_filter
 import sys
 # Get the directory of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1689,30 +1689,35 @@ class Peak_analysis():
         
         return peak_max, prop_max
     
-    def split_into_segments(self, V):
+    def split_into_segments(self):
         """
         Returns a list of (start_idx, end_idx) tuples for each sweep segment.
         Identifies all vertices where the sweep direction changes.
         """
-        dV = np.diff(V)
+        V_smooth = savgol_filter(self.V, window_length=51, polyorder=3)
+        dV = np.diff(V_smooth)
         sign_change = np.where(np.sign(dV[:-1]) != np.sign(dV[1:]))[0] + 1
         
+        # Plot segments (optional)
+        # for s in sign_change:
+        #     self.ax.plot(self.V[s], self.I[s], 'o', color='k')
+            
         # Build segment boundaries
         segments = []
         prev = 0
         for v in sign_change:
             segments.append((prev, v))
             prev = v
-        segments.append((prev, len(V) - 1))  # final segment
+        segments.append((prev, len(self.V) - 1))  # final segment
         # print(segments)
         return segments
     
-    def nearest_on_same_segment(self, V, target_V, peak_idx):
+    def nearest_on_same_segment(self, target_V, peak_idx):
         """
         Finds the nearest index to target_V within the SAME CV sweep segment
         that contains the peak.
         """
-        segments = self.split_into_segments(V)
+        segments = self.split_into_segments()
     
         # Find which segment the peak belongs to
         for (start, end) in segments:
@@ -1723,35 +1728,35 @@ class Peak_analysis():
             raise RuntimeError("Peak index not in any segment — unexpected!")
     
         # Select that segment
-        V_seg = V[segment_start:segment_end+1]
-    
+        V_seg = self.V[segment_start:segment_end+1]
+        
         # Find nearest point within that sweep
         local_idx = np.argmin(np.abs(V_seg - target_V))
         global_idx = local_idx + segment_start
     
         return global_idx
     
-    def draw_baseline_and_correct_peak(self, V, I, idx_base, peak_idx, pc, bc):
+    def draw_baseline_and_correct_peak(self, idx_base, peak_idx, pc, bc):
         """
         Draws a baseline from (idx_base) using the next 5 points,
         clips the line so it ends exactly at the peak potential,
         draws a vertical connector, returns Ip_corrected.
         """
         # Safety check
-        if idx_base + 5 >= len(V):
+        if idx_base + 5 >= len(self.V):
             raise ValueError("Baseline reference point + 5 exceeds data length.")
     
         # Two baseline points
-        x1, y1 = V[idx_base],     I[idx_base]
-        x2, y2 = V[idx_base+5],   I[idx_base+5]
+        x1, y1 = self.V[idx_base],     self.I[idx_base]
+        x2, y2 = self.V[idx_base+10],   self.I[idx_base+10]
     
         # Linear fit (baseline slope & intercept)
         m = (y2 - y1) / (x2 - x1)
         b = y1 - m * x1
     
         # Peak position
-        Vp = V[peak_idx]
-        Ip = I[peak_idx]
+        Vp = self.V[peak_idx]
+        Ip = self.I[peak_idx]
     
         # Baseline value at peak potential
         I_baseline_at_peak = m * Vp + b
@@ -1778,6 +1783,9 @@ class Peak_analysis():
         return Ip_corrected, I_baseline_at_peak
     
     def rev_peak_finder(self, t, V, I):
+        self.t = t
+        self.V = V
+        self.I = I
         self.ref_units = self.GUI.PotentialUnits_.get()
         self.current_units = self.GUI.CurrentUnits_.get()
         peak_color = self.GUI.peak_analysis_color.get()
@@ -1807,9 +1815,9 @@ class Peak_analysis():
             if volt_ox_input != '':
                 try:
                     volt = float(volt_ox_input)
-                    idx = self.nearest_on_same_segment(V, volt, prom_peak_max[0])
+                    idx = self.nearest_on_same_segment(volt, prom_peak_max[0])
                     self.ax.plot(V[idx], I[idx], 'o', color=base_color)
-                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
+                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(
                         idx,
                         prom_peak_max[0],
                         peak_color,
@@ -1833,9 +1841,9 @@ class Peak_analysis():
             if volt_red_input != '':
                 try:
                     volt = float(volt_red_input)
-                    idx = self.nearest_on_same_segment(V, volt, prom_peak_min[0])
+                    idx = self.nearest_on_same_segment(volt, prom_peak_min[0])
                     self.ax.plot(V[idx], I[idx], 'o', color=base_color)
-                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(V, I,
+                    Ip_corr, I_base_at_peak = self.draw_baseline_and_correct_peak(
                         idx,
                         prom_peak_min[0],
                         peak_color,
@@ -1855,6 +1863,9 @@ class Peak_analysis():
                   f'E½ = {E_half[0]:.3f} {self.ref_units}')
     
     def irr_peak_finder(self, t, V, I):
+        self.t = t
+        self.V = V
+        self.I = I
         self.ref_units = self.GUI.PotentialUnits_.get()
         self.current_units = self.GUI.CurrentUnits_.get()
         peak_color = self.GUI.peak_analysis_color.get()
