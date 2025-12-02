@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt, cm, ticker as tk
 import numpy as np
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, font
 import time
 import io
 import subprocess
@@ -84,7 +84,26 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         root.attributes('-topmost', 1)
         root.attributes('-topmost', 0) 
         root.option_add('*tearOff', False)
+
+        # Creating a Font object of "TkDefaultFont"
+        self.defaultFont = font.nametofont("TkDefaultFont")
+
+        # Overriding default-font with custom settings
+        # i.e changing font-family, size and weight
+        root.option_add("*font", self.defaultFont)
+        self.defaultFont.configure(family=self.defaultFont['family'],
+                                   size=self.defaultFont['size'],
+                                   weight=self.defaultFont['weight'])
         
+        self.boldFont = font.Font(family=self.defaultFont['family'],
+                                  size=self.defaultFont['size'],
+                                  weight='bold')
+        self.boldStyle = Style().configure('Bold.TButton', font=(self.defaultFont['family'],
+                                                               self.defaultFont['size'],
+                                                               'bold'))
+        self.notebookStyle = Style().configure('TNotebook.Tab', font=(self.defaultFont['family'],
+                                                                self.defaultFont['size'],
+                                                                'bold'))
         # --------- ICON LOADING ---------
         if sys.platform.startswith("win"):
             # Windows requires .ico
