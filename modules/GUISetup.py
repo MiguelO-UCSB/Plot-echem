@@ -154,16 +154,19 @@ class GUISetupMethods():
     
     def MakeUpdateFrame(self, frame):
         # Reset ADC view button
-        Button(frame, text='Update Plot', width=36, 
+        Button(frame, text='Update Plot',
+               style="Bold.TButton", width=30, 
                command=self.EchemFig.update_plot).grid(
                    row=0, column=0, sticky=(W,E))
         # Copy to Clipboard Button
-        Button(frame, text="Copy Figure to Clipboard", width=36,
+        Button(frame, text="Copy Figure to Clipboard",
+               style="Bold.TButton", width=30,
                command=self.copy_figure_to_clipboard).grid(
                    row=0, column=1, sticky="we", pady=10)
         return
     
     def MakePlotParamsFrame(self, frame):
+        
         Label(frame, text='   Overlay: ').grid(row=0, column=0, sticky=(E))
         self.Overlay_ = OptionMenuStringVar(frame, Overlay_options, 0, 1, (E), idx=1,)
         Label(frame, text='   ').grid(row=0, column=2, sticky=(E))
