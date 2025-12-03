@@ -195,7 +195,7 @@ class EchemFig():
 
         self.ln, = self.ax.plot([],[])
         self.clear_artists()
-        # self.fig.tight_layout()
+        self.fig.tight_layout()
         
         if not hasattr(self, "style_dir") or self.style_dir is None:
             self.style_dir = None
@@ -203,7 +203,7 @@ class EchemFig():
             plt.style.use(self.style_dir)
             
         self.fig.canvas.draw()
-        # self.draw_artists()
+        self.draw_artists()
     
             
     def set_data_from_file(self, extracted_data, file_max):
@@ -228,8 +228,6 @@ class EchemFig():
         width = int(self.GUI.plot_width.get())
         height = int(self.GUI.plot_height.get())
         self.fig.set_size_inches(width, height)
-        
-        # self.fig.tight_layout()
             
         overlay_val = self.GUI.Overlay_.get()
         # Convert string to boolean using the dictionary
@@ -246,6 +244,8 @@ class EchemFig():
             if self.extracted_data[file_to_plot][-1] == 'EIS':
                 self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.NUM_SWEEPS, self.file_num, self.file_type = self.extracted_data[file_to_plot]
                 self.set_params_EIS()
+            
+            self.fig.tight_layout()
             print(f'Plotting file {file_to_plot+1}')
             return
         
@@ -272,6 +272,7 @@ class EchemFig():
                 self.freq, self.real_Z, self.imag_Z, self.abs_Z, self.phase, self.NUM_SWEEPS, self.file_num, self.file_type = self.extracted_data[file]
                 self.set_params_EIS()
         
+        self.fig.tight_layout()
         print('Plot updated')
     
     def set_params_IV(self):
@@ -1672,7 +1673,7 @@ class EchemFig():
         transparency = bool_map.get(self.Transparency.get().strip().lower(), False)
         dpi_val = int(self.dpi.get())
         
-        self.fig.savefig(path, transparent = transparency, dpi=dpi_val, format=export_format)
+        self.fig.savefig(path, transparent = transparency, dpi=dpi_val, format=export_format, bbox_inches="tight")
         print(f'Plot exported as {export_format}')
         
 class Peak_analysis():

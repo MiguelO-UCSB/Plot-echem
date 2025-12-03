@@ -198,20 +198,15 @@ class GUISetupMethods():
         self.canvas_widget.grid(row=0, column=0, sticky="nsew")
         
         # Allow figure area to expand with window
-        frame.rowconfigure(5, weight=1)
-        for col in range(4):
-            frame.columnconfigure(col, weight=1)
-        
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+    
         # Bind entry changes
         self.plot_width.trace_add("write", self.on_entry_resize)
         self.plot_height.trace_add("write", self.on_entry_resize)
     
-        # Bind window/frame size changes
+        # Bind canvas resize → update figure size
         self.canvas_widget.bind("<Configure>", self.on_canvas_resize)
-        
-        # --- FIXED: Allow canvas widget to expand ---
-        self.canvas_widget.grid_rowconfigure(0, weight=1)
-        self.canvas_widget.grid_columnconfigure(0, weight=1)
     
     def MakeResizeFrame(self, frame):
         # Variables for entry boxes
@@ -239,6 +234,11 @@ class GUISetupMethods():
         h_in = event.height / dpi
     
         self.fig.set_size_inches(w_in, h_in, forward=False)
+        # Recompute layout so axes are not clipped
+        try:
+            self.fig.set_layout_engine("tight")
+        except Exception:
+            self.fig.tight_layout(pad=1.2)
         self.canvas_agg.draw_idle()
     
     def on_entry_resize(self, *args):

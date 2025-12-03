@@ -147,7 +147,6 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         # Root window stretches
         root.rowconfigure(0, weight=1)
-        root.rowconfigure(1, weight=0)
         root.columnconfigure(0, weight=1)
         
         # ======= PANED WINDOW (Horizontal split) =======
@@ -173,7 +172,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         # -------- RIGHT PANEL --------
         rightpanel = Frame(main_pane)
-        rightpanel.rowconfigure(1, weight=1)  # EchemFrame grows
+        rightpanel.rowconfigure(0, weight=1)  # EchemFrame grows
         rightpanel.columnconfigure(0, weight=1)
         
         EchemFrame   = Frame(rightpanel)
