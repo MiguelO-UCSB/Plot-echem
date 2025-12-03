@@ -1861,7 +1861,7 @@ class Peak_analysis():
             dI = I[prom_peak_max] - I[prom_peak_min]
             print(f'\u0394E = {dE[0]:.3f} {self.ref_units}\n'+
                   f'\u0394I = {dI[0]:.3f} {self.current_units}\n'+
-                  f'E½ = {E_half[0]:.3f} {self.ref_units}')
+                  f'E½ = {E_half[0]:.3f} {self.ref_units}\n')
     
     def irr_peak_finder(self, t, V, I):
         self.t = t

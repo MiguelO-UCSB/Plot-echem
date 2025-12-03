@@ -155,12 +155,12 @@ class GUISetupMethods():
     def MakeUpdateFrame(self, frame):
         # Reset ADC view button
         Button(frame, text='Update Plot',
-               style="Bold.TButton", width=30, 
+               style="Bold.TButton", width=31, 
                command=self.EchemFig.update_plot).grid(
                    row=0, column=0, sticky=(W,E))
         # Copy to Clipboard Button
         Button(frame, text="Copy Figure to Clipboard",
-               style="Bold.TButton", width=30,
+               style="Bold.TButton", width=31,
                command=self.copy_figure_to_clipboard).grid(
                    row=0, column=1, sticky="we", pady=10)
         return
@@ -187,26 +187,44 @@ class GUISetupMethods():
         self.EIS_view_selection = OptionMenuStringVar(frame, EIS_options, 1, 4, (E))  
                                
     def MakeEchemFrame(self, frame, ResizeFrame):   
-        self.fig = plt.Figure(figsize=(4,4), dpi=150)
-        self.fig.add_subplot(111)
-        
-        self.MakeResizeFrame(ResizeFrame)     
-        
-        # Canvas setup               
-        self.canvas_agg  = FigureCanvasTkAgg(self.fig, master=frame)
+        """
+        Build the plotting canvas inside 'frame'. Use a debounced resize handler
+        so the figure only resizes after the user stops resizing the window.
+        """
+        # Create figure with constrained_layout enabled (handles axes, labels, legends)
+        self.fig = plt.Figure(figsize=(4, 4), dpi=150, constrained_layout=True)
+        self.ax = self.fig.add_subplot(111)
+    
+        # Build resize controls (leftover API)
+        self.MakeResizeFrame(ResizeFrame)
+    
+        # Create the canvas and grid it so it expands with the frame
+        self.canvas_agg = FigureCanvasTkAgg(self.fig, master=frame)
         self.canvas_widget = self.canvas_agg.get_tk_widget()
         self.canvas_widget.grid(row=0, column=0, sticky="nsew")
-        
-        # Allow figure area to expand with window
+    
+        # CRITICAL: ensure the parent frame lets row=0/col=0 expand
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
     
-        # Bind entry changes
-        self.plot_width.trace_add("write", self.on_entry_resize)
-        self.plot_height.trace_add("write", self.on_entry_resize)
+        # Also make sure the canvas internal widget can expand (defensive)
+        # (Note: canvas_widget is not a grid container in the usual sense, but this is harmless)
+        try:
+            self.canvas_widget.rowconfigure(0, weight=1)
+            self.canvas_widget.columnconfigure(0, weight=1)
+        except Exception:
+            pass
     
-        # Bind canvas resize → update figure size
-        self.canvas_widget.bind("<Configure>", self.on_canvas_resize)
+        # Debounce state (used by on_canvas_resize)
+        self._resize_after_id = None
+        self._last_canvas_size = (0, 0)
+        self._manual_size_mode = False  # toggled when user sets manual size
+    
+        # Bind configure events to the canvas; the handler debounces rapid events
+        self.canvas_widget.bind("<Configure>", self.on_canvas_configure)
+    
+        # If you want to draw once now
+        self.canvas_agg.draw_idle()
     
     def MakeResizeFrame(self, frame):
         # Variables for entry boxes
@@ -223,33 +241,116 @@ class GUISetupMethods():
         Label(frame, text='     ').grid(row=3, column=2, sticky=(E))
         Label(frame, text="  Height (in): ").grid(row=3, column=3, pady=10)
         Entry(frame, textvariable=self.plot_height, width=10).grid(row=3, column=4, sticky=E)
+        Button(frame, text="Set Size", command=self.on_entry_resize).grid(row=3, column=5)
+        Button(frame, text="Reset to Auto", command=self.reset_to_auto).grid(row=3, column=6)
     
-    def on_canvas_resize(self, event):
-        """Resize matplotlib figure to match canvas size exactly."""
+        # Keep trace for instant feedback if you want — but it will call the same setter when user types:
+        # avoid trace flooding: we won't call a trace callback per character to prevent noisy behavior.
+        return
+
+    def on_canvas_configure(self, event):
+        """
+        Debounced handler for <Configure> on the canvas widget.
+        We schedule `_apply_canvas_size()` after a short delay so rapid resize
+        events don't cause recursion/flicker.
+        """
+        # If user set manual mode, do nothing — let them control size using the entry/button.
+        if getattr(self, "_manual_size_mode", False):
+            return
+    
+        # Ignore tiny or invalid sizes
+        if not isinstance(event.width, int) or not isinstance(event.height, int):
+            return
         if event.width < 10 or event.height < 10:
             return
-        
-        dpi = self.fig.get_dpi()
-        w_in = event.width / dpi
-        h_in = event.height / dpi
     
-        self.fig.set_size_inches(w_in, h_in, forward=False)
-        # Recompute layout so axes are not clipped
+        current = (event.width, event.height)
+        # If size hasn't changed, ignore
+        if current == getattr(self, "_last_canvas_size", (None, None)):
+            return
+        self._last_canvas_size = current
+    
+        # cancel previous scheduled job
+        if getattr(self, "_resize_after_id", None):
+            try:
+                self.canvas_widget.after_cancel(self._resize_after_id)
+            except Exception:
+                pass
+    
+        # schedule an update after 150 ms of inactivity (tuneable)
+        self._resize_after_id = self.canvas_widget.after(150, self._apply_canvas_size)
+    
+    
+    def _apply_canvas_size(self):
+        """Set the figure size to match the canvas (inches = px / dpi) and redraw."""
+        self._resize_after_id = None
+        w_px = self.canvas_widget.winfo_width()
+        h_px = self.canvas_widget.winfo_height()
+    
+        # Defensive checks
+        if w_px <= 0 or h_px <= 0:
+            return
+    
+        dpi = self.fig.get_dpi()
+    
+        # compute inches and set figure size; forward=False prevents heavy internal forcing
+        w_in = w_px / float(dpi)
+        h_in = h_px / float(dpi)
+    
         try:
-            self.fig.set_layout_engine("tight")
+            # Only set if significantly different to avoid spurious redraws
+            fw, fh = self.fig.get_size_inches()
+            if abs(fw - w_in) > 0.01 or abs(fh - h_in) > 0.01:
+                self.fig.set_size_inches(w_in, h_in, forward=False)
         except Exception:
-            self.fig.tight_layout(pad=1.2)
+            # fallback - still try to set
+            try:
+                self.fig.set_size_inches(w_in, h_in, forward=False)
+            except Exception:
+                pass
+    
+        # don't call tight_layout here — constrained_layout was enabled at creation
         self.canvas_agg.draw_idle()
     
+    
     def on_entry_resize(self, *args):
-        """User typed a manual width/height → update figure size."""
+        """
+        Called by the 'Set Size' button (and optionally traces).
+        This switches to manual mode and sets the figure size explicitly.
+        """
         try:
             w = float(self.plot_width.get())
             h = float(self.plot_height.get())
+        except Exception:
+            return
+    
+        # Mark manual mode so configure events won't override user choice
+        self._manual_size_mode = True
+    
+        dpi = self.fig.get_dpi()
+        try:
             self.fig.set_size_inches(w, h, forward=True)
-            self.canvas_agg.draw_idle()
-        except ValueError:
-            pass
+        except Exception:
+            self.fig.set_size_inches(w, h, forward=False)
+    
+        # Force an immediate redraw
+        self.canvas_agg.draw_idle()
+    
+    
+    def reset_to_auto(self):
+        """Return to auto-resize mode (window-driven)."""
+        self._manual_size_mode = False
+    
+        # Trigger immediate re-evaluation of canvas size
+        if getattr(self, "_resize_after_id", None):
+            try:
+                self.canvas_widget.after_cancel(self._resize_after_id)
+            except Exception:
+                pass
+            self._resize_after_id = None
+    
+        # Directly call apply function to sync figure to current canvas size
+        self._apply_canvas_size()
     
     def MakePlotTypeFrame(self, frame):
         tabs = Notebook(frame)
