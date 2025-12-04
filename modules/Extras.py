@@ -27,6 +27,7 @@ def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False
         return var, menu
     return var
 
+# ---- Fourier Transform Block
 class Make_Popup_GUI_Figure():
     
     def __init__(self, GUI):
@@ -371,7 +372,8 @@ class FTdataPopup(Make_Popup_GUI_Figure):
             self.ax_fft.text(freqs_fil[deduped][i]+1, abs(ft_V_fil)[deduped][i],
                              f'{round(freqs_fil[deduped][i], 2)} Hz',
                              ha='left', size=12, rotation='horizontal')
-    
+
+# ---- Reference Electrode Converter Block
 class Make_Popup_GUI():
     
     def __init__(self, GUI):
@@ -676,7 +678,8 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
             print(f"An error occurred: {e}")
             for name in self.UNIT_DIC:
                 self.output_vars_unit[name].set("Error")
-                
+
+# ---- Macrodisk Randles–Ševčík Calculator
 class Make_Popup_GUI_macro():
     
     def __init__(self, GUI):
@@ -892,6 +895,7 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         self.output_labels["Diameter"].config(text=f"{np.sqrt(A_calc/np.pi)*20:.3} mm")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
 
+# ---- Macrodisk and Ring Levich Calculator Block
 class Make_Popup_GUI_macro_levich():
     
     def __init__(self, GUI):
@@ -1108,7 +1112,8 @@ class MacroLevichPopup(Make_Popup_GUI_macro_levich):
         self.output_labels["Limiting current"].config(text=f"{Ip_calc:.3e} A, {Ip_calc*1000:.3} mA, {Ip_calc*1000000:.3} μA")
         self.output_labels["Concentration"].config(text=f"{C_calc/1e-3:.3e} M, {C_calc*1e6:.3} mM")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
-        
+
+# ---- Microelectrode Randles–Ševčík Calculator
 class Make_Popup_GUI_micro():
     
     def __init__(self, GUI):

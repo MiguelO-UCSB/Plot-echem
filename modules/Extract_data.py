@@ -20,6 +20,7 @@ class extract_data():
         # Local reference to GUI object
         self.GUI = GUI
         
+        # ---- One File only
         Multi_files = MF
         if Multi_files == False:
             file = folder
@@ -140,6 +141,7 @@ class extract_data():
             
             return extracted_data, 0
         
+        # ---- Multiple Files
         if Multi_files == True:
             extracted_data = []
             file_num = 0
@@ -315,7 +317,7 @@ class extract_data():
             return extracted_data, file_max
     
 class extract:
-    
+    # ---- Biologic
     def bio_data_OVP(file):
         df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t')
         
@@ -324,21 +326,6 @@ class extract:
         i = [0 for _ in range(len(t))]
         
         return t, v, i
-    
-    def autolab_data_PEIS(file, type_):
-        if type_ == 'Raw':
-            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';')
-            
-        if type_ == 'Fit':
-            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';')
-        
-        freq = np.array(df['freq'])
-        real_Z = np.array(df['r(Z)'])
-        imag_Z = np.array(df['im(Z)'])
-        abs_Z = np.array(df['|Z|'])
-        phase = np.array(df['phase'])
-        
-        return freq, real_Z, imag_Z, abs_Z, phase
     
     def bio_data_PEIS(file):
         df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t')
@@ -362,16 +349,6 @@ class extract:
         sweeps = np.array(df['nc'])
         
         return freq, real_Z, imag_Z, abs_Z, phase, sweeps
-    
-    def autolab_data_norm(file):
-        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
-        
-        t = np.array(df['t'])
-        v = np.array(df['v'])
-        i = np.array(df['i'])
-        sweeps = np.array(df['cycle number'])
-        
-        return t, v, i, sweeps
     
     def bio_data_no_cycle(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t')
@@ -402,6 +379,33 @@ class extract:
         
         return t, v, i, sweeps
     
+    # ---- AutoLab
+    def autolab_data_norm(file):
+        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
+        
+        t = np.array(df['t'])
+        v = np.array(df['v'])
+        i = np.array(df['i'])
+        sweeps = np.array(df['cycle number'])
+        
+        return t, v, i, sweeps
+    
+    def autolab_data_PEIS(file, type_):
+        if type_ == 'Raw':
+            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';')
+            
+        if type_ == 'Fit':
+            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';')
+        
+        freq = np.array(df['freq'])
+        real_Z = np.array(df['r(Z)'])
+        imag_Z = np.array(df['im(Z)'])
+        abs_Z = np.array(df['|Z|'])
+        phase = np.array(df['phase'])
+        
+        return freq, real_Z, imag_Z, abs_Z, phase
+    
+    # ---- Other
     def seccm_data(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1,)
         

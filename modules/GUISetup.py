@@ -12,11 +12,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Add a directory relative to the script's location
 sys.path.append(os.path.join(script_dir, ))
-# print(sys.path)
 
-# Now you can import modules
-# from modules import Plotter
-
+# ---- Lists for GUI
 Overlay_options = ['True', 'False']
 
 bool_map = {"true": True, 'True': True,
@@ -88,12 +85,12 @@ marker_str = ["None", ".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8"
 
 peak_analysis_options = ['None', 'Reversible', 'Peak Finder']
 
+# ---- Tkinter Functions
 def where(l, val):
     for i, value in enumerate(l):
         if value == val:
             return i
     raise IndexError
-
 
 def focus_next_widget(event):
     widget = event.widget.tk_focusNext()
@@ -104,7 +101,6 @@ def focus_next_widget(event):
         pass
     return("break")
 
-
 def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = StringVar()
     menu = OptionMenu(frame, var, options[idx],*options)
@@ -113,7 +109,6 @@ def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False
         return var, menu
     return var
 
-
 def OptionMenuIntVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = IntVar()
     menu = OptionMenu(frame, var, options[idx],*options)
@@ -121,7 +116,6 @@ def OptionMenuIntVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     if return_widget:
         return var, menu
     return var
-
 
 def EntryStringVar(frame, width, row, col, sticky, default='', bind_key=None,
                    bind_func=None, tab=False, returnTab = False, return_widget=False):
@@ -153,6 +147,7 @@ def widgets_in_column(widgets, column, start_row, sticky):
 class GUISetupMethods():
     
     def MakeUpdateFrame(self, frame):
+        '''Buttons for Updating Plot and Clipboard'''
         # Reset ADC view button
         Button(frame, text='Update Plot',
                style="Bold.TButton", width=31, 
@@ -166,7 +161,7 @@ class GUISetupMethods():
         return
     
     def MakePlotParamsFrame(self, frame):
-        
+        '''Plot Options Frame'''
         Label(frame, text='   Overlay: ').grid(row=0, column=0, sticky=(E))
         self.Overlay_ = OptionMenuStringVar(frame, Overlay_options, 0, 1, (E), idx=1,)
         Label(frame, text='   ').grid(row=0, column=2, sticky=(E))
@@ -353,6 +348,7 @@ class GUISetupMethods():
         self._apply_canvas_size()
     
     def MakePlotTypeFrame(self, frame):
+        '''Main Frame for all Tabs'''
         tabs = Notebook(frame)
         VoltFrame = Frame(tabs)
         EISFrame = Frame(tabs)
@@ -380,7 +376,7 @@ class GUISetupMethods():
         NormFrame = Frame(frame)
         NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Norm'''
+        # ---- Main Frame
         Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
         self.title_name = EntryStringVar(NormFrame, 10, 0, 1, (W), tab=True,
                                                   bind_key='<Return>', default='')
@@ -414,7 +410,7 @@ class GUISetupMethods():
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         inner_tabs.add(ColorbarFrame, text='  Colorbar  ')
         
-        '''Axis'''
+        # ---- Axis Notebook
         Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
         self.box_aspect = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -446,7 +442,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(AxisFrame, text='').grid(row=13, column=0, sticky=(E))
         
-        '''Cycles and Files to Plot'''
+        # ---- Cycles and Files to Plot Notebook
         Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
         self.cycles_to_plot = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -459,7 +455,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
         
-        '''Shifts'''
+        # ---- Shifts Notebook
         Label(ShiftsFrame, text='X-axis shifts: ').grid(row=3, column=0, sticky=(E))
         self.x_axis_shifts = EntryStringVar(ShiftsFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -481,7 +477,7 @@ class GUISetupMethods():
         self.end_before_float = EntryStringVar(ShiftsFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        '''Colorbar'''
+        # ---- Colorbar Notebook
         Label(ColorbarFrame, text='Colorbar: ').grid(row=0, column=0, sticky=(E))
         self.Colorbar_ = OptionMenuStringVar(ColorbarFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         Label(ColorbarFrame, text='Size: ').grid(row=1, column=0, sticky=(E))
@@ -512,7 +508,7 @@ class GUISetupMethods():
         NormFrame = Frame(frame)
         NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Norm'''
+        # ---- Main Frame
         Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
         self.title_name_EIS = EntryStringVar(NormFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -534,7 +530,7 @@ class GUISetupMethods():
         inner_tabs.add(CyclesFrame, text='  Cycles & Files to Plot  ')
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         
-        '''Axis'''
+        # ---- Axis Notebook
         Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
         self.box_aspect_EIS = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='1')
@@ -566,7 +562,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(frame, text='').grid(row=13, column=0, sticky=(E))
         
-        '''Cycles and Files to Plot'''
+        # ---- Cycles and Files to Plot Notebook
         Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
         self.cycles_to_plot_EIS = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -579,7 +575,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
         
-        '''Shifts'''
+        # ---- Shifts Notebook
         Label(ShiftsFrame, text='X-axis shifts: ').grid(row=0, column=0, sticky=(E))
         self.x_axis_shifts_EIS = EntryStringVar(ShiftsFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -593,7 +589,7 @@ class GUISetupMethods():
         ColorFrame = Frame(frame)
         ColorFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Color'''
+        # ---- Color Frame
         Label(ColorFrame, text='Color: ').grid(row=1, column=0, sticky=(E))
         
         # First OptionMenu (Category)
@@ -640,7 +636,7 @@ class GUISetupMethods():
         inner_tabs.add(LegendLSMSFrame, text='  Legend, Linestyle, and Makers  ')
         inner_tabs.add(InsetFrame, text='  Inset  ')
         
-        '''Legend'''
+        # ---- Legend Notebook
         Label(LegendLSMSFrame, text='Legend: ').grid(row=0, column=0, sticky=(E))
         self.Legend_ = OptionMenuStringVar(LegendLSMSFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -660,7 +656,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='1.5')
         Label(LegendLSMSFrame, text='').grid(row=8, column=0, sticky=(E))
         
-        '''Linestyle and Makers'''
+        # ---- Linestyle and Makers Notebook
         Label(LegendLSMSFrame, text='Line width: ').grid(row=9, column=0, sticky=(E))
         self.line_width = EntryStringVar(LegendLSMSFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='2')
@@ -685,7 +681,7 @@ class GUISetupMethods():
         self.manual_marker_styles = EntryStringVar(LegendLSMSFrame, 10, 15, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        '''Inset'''
+        # ---- Inset Notebook
         Label(InsetFrame, text='Inset: ').grid(row=0, column=0, sticky=(E))
         self.Inset_ = OptionMenuStringVar(InsetFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -744,6 +740,7 @@ class GUISetupMethods():
         self.lowerright_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 18, 3, (W,E), idx=1,)
         
     def MakeDataControlFrame(self, frame):
+        '''Frame for analysis functions'''
         Label(frame, text='Apply Notch Filter: ').grid(row=0, column=0, sticky=(E))
         self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -792,6 +789,7 @@ class GUISetupMethods():
         self.plot_cmap.set(new_items[0] if new_items else "")
         
     def MakeExportSettingsFrame(self, frame):
+        '''Frame for Exporting Plots'''
         #Trans - True/False
         #dpi #
         #format - 'png', 'pdf', 'svg', 'jpg'

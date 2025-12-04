@@ -129,7 +129,8 @@ class EchemFig():
         self.cid_press = self.fig.canvas.mpl_connect("button_press_event", self.on_press)
         self.cid_release = self.fig.canvas.mpl_connect("button_release_event", self.on_release)
         self.cid_motion = self.fig.canvas.mpl_connect("motion_notify_event", self.on_motion)
-
+    
+    # ---- Interactive events
     def on_press(self, event):
         if event.inaxes != self.ax:  # ignore clicks outside plot
             return
@@ -183,7 +184,8 @@ class EchemFig():
         self.ax.set_xlim(self.original_xlim)
         self.ax.set_ylim(self.original_ylim)
         self.fig.canvas.draw_idle()
-        
+    
+    # ---- Starting the Plotter
     def initialize(self):
         '''
         Clear the figure
@@ -275,6 +277,7 @@ class EchemFig():
         self.fig.tight_layout()
         print('Plot updated')
     
+    # ---- Voltamperometric Plots
     def set_params_IV(self):
         '''
         Grab display options from the GUI and initiate redrawing the plot.
@@ -733,58 +736,6 @@ class EchemFig():
         if orientation == 'vertical' and location == 'left':
             self.cbar.ax.yaxis.set_ticks_position('left')
             self.cbar.ax.yaxis.set_label_position('left')
-        
-    def notch_filter(self, i, calc_samp_freq):
-        freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
-        freqs = [lbl.strip() for lbl in freq_strs if lbl.strip() != '']
-        
-        if len(freqs) == 0:
-            print('Error: Notch filter not set\nSet Frequencies with "," as delimiter')
-            return i
-        
-        for freq in freqs:
-            notch_freq = freq # Frequency to be removed (Hz)
-            quality_factor = 30 # Quality factor. A higher Q results in a narrower notch.
-            print(f'Calculated sampling frequency at {calc_samp_freq} Hz with {notch_freq} Hz filtered')
-            
-            b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, calc_samp_freq)
-
-            # Apply the filter
-            filtered_signal = signal.filtfilt(b_notch, a_notch, i)
-            i = filtered_signal
-        
-        return i
-    
-    def set_colormap_for_plot(self, n_colors):
-        # Colormap option from GUI
-        cmin, cmax = self.update_colormap()
-        cmap = self.GUI.plot_cmap.get()
-        color_params = [cmap, cmin, cmax]
-        
-        # Normalization maps sweep/file index -> colormap fraction
-        norm = mpl.colors.Normalize(vmin=1, vmax=n_colors)
-        
-        # Colormap from your params
-        if color_params[0] == 'Default':
-            prop_cycle = mpl.rcParams['axes.prop_cycle']
-            default_colors = prop_cycle.by_key()['color']
-            # base_cmap = LinearSegmentedColormap.from_list("style_cycle_interp", default_colors, N=256)
-            base_cmap = ListedColormap(default_colors, name="style_cycle_cmap")
-        else:
-            base_cmap = mpl.colormaps.get_cmap(color_params[0])
-        
-        if n_colors == 1:
-            cmap = mpl.colors.ListedColormap([base_cmap(0)])
-        else:
-            cmap = self.truncate_colormap(base_cmap, color_params[1],
-                                          color_params[2], n_colors)
-        
-        # ScalarMappable for both plotting & colorbar
-        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])  # Matplotlib quirk
-        colors = [sm.to_rgba(i) for i in range(1, n_colors+1)]
-        
-        return sm, colors, cmap
     
     def set_IV_cycles_to_plot_and_shifts(self, n_colors):
         # --- Get cycles to plot from GUI or manual from Console ---
@@ -824,82 +775,6 @@ class EchemFig():
         
         return x_shifts, y_shifts, cycles_to_plot
     
-    def parse_selection(self, selection_str, max_val):
-        """
-        Parse selection strings like '1,3-5' or 'all' into a list of integers.
-        max_val ensures we don’t exceed available indices.
-        """
-        selection_str = selection_str.strip().lower()
-        if selection_str in ('all', ''):
-            return list(range(max_val))
-        
-        result = set()
-        for part in selection_str.split(','):
-            part = part.strip()
-            if '-' in part:
-                start, end = part.split('-')
-                result.update(range(int(start)-1, int(end)))  # zero-indexed
-            else:
-                try:
-                    idx = int(part) - 1
-                    if 0 <= idx < max_val:
-                        result.add(idx)
-                    else:
-                        print(f'{idx} is out of bounds for cycles or files to plot')
-                except ValueError:
-                    print('Error: Cycles and Files are integers separated by commas\nIgnoring...')
-                    pass
-        return sorted(result)
-
-    def set_legend_labels(self, n_colors, selected_indices=None):
-        """
-        Create legend labels based on user input, automatically filling
-        missing positions with numeric placeholders. Works with selective
-        file/cycle plotting.
-    
-        Parameters
-        ----------
-        n_colors : int
-            Total number of color slots (files or cycles)
-        selected_indices : list[int] or None
-            Indices of files/cycles being plotted (0-based)
-        """
-        # --- Get labels from GUI ---
-        label_strs = self.GUI.labels_for_legend.get().split(',')
-        user_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
-        
-        # Start with default numeric labels
-        legend_labels = [str(i + 1) for i in range(n_colors)]
-        
-        if not user_labels:
-            # No user labels given → just use numbers
-            return legend_labels
-    
-        # --- Match user labels to selected indices ---
-        if len(user_labels) > len(selected_indices):
-            # Too many labels, ignore extras
-            # print(f"Warning: {len(user_labels)} labels provided but only {len(selected_indices)} plotted. Extra labels ignored.")
-            user_labels = user_labels[:len(selected_indices)]
-        elif len(user_labels) < len(selected_indices):
-            # Too few labels, fill the remaining with numbers
-            # e.g. user_labels = ['A', 'B'], selected_indices=[0,2,4]
-            fill_count = len(selected_indices) - len(user_labels)
-            user_labels += [str(i + 1) for i in range(len(user_labels), len(user_labels) + fill_count)]
-        
-        # Map labels to the correct selected indices
-        for idx, user_label in zip(selected_indices, user_labels):
-            if 0 <= idx < n_colors:
-                legend_labels[idx] = user_label
-        
-        return legend_labels
-            
-    def truncate_colormap(self, cmap, minval, maxval, n):
-        """Return a truncated copy of a colormap"""
-        new_cmap = LinearSegmentedColormap.from_list(
-            f"trunc({cmap.name},{minval:.2f},{maxval:.2f})",
-            cmap(np.linspace(minval, maxval, n)))
-        return new_cmap
-
     def update_plotlim(self):
         '''
         Set Axis limits and tick multiples for IV plots
@@ -999,6 +874,109 @@ class EchemFig():
         self.original_xlim = self.ax.get_xlim()
         self.original_ylim = self.ax.get_ylim()
     
+    # ---- Analysis
+    def notch_filter(self, i, calc_samp_freq):
+        freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
+        freqs = [lbl.strip() for lbl in freq_strs if lbl.strip() != '']
+        
+        if len(freqs) == 0:
+            print('Error: Notch filter not set\nSet Frequencies with "," as delimiter')
+            return i
+        
+        for freq in freqs:
+            notch_freq = freq # Frequency to be removed (Hz)
+            quality_factor = 30 # Quality factor. A higher Q results in a narrower notch.
+            print(f'Calculated sampling frequency at {calc_samp_freq} Hz with {notch_freq} Hz filtered')
+            
+            b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, calc_samp_freq)
+
+            # Apply the filter
+            filtered_signal = signal.filtfilt(b_notch, a_notch, i)
+            i = filtered_signal
+        
+        return i
+    
+    # ---- Plot Customizations
+    def set_colormap_for_plot(self, n_colors):
+        # Colormap option from GUI
+        cmin, cmax = self.update_colormap()
+        cmap = self.GUI.plot_cmap.get()
+        color_params = [cmap, cmin, cmax]
+        
+        # Normalization maps sweep/file index -> colormap fraction
+        norm = mpl.colors.Normalize(vmin=1, vmax=n_colors)
+        
+        # Colormap from your params
+        if color_params[0] == 'Default':
+            prop_cycle = mpl.rcParams['axes.prop_cycle']
+            default_colors = prop_cycle.by_key()['color']
+            # base_cmap = LinearSegmentedColormap.from_list("style_cycle_interp", default_colors, N=256)
+            base_cmap = ListedColormap(default_colors, name="style_cycle_cmap")
+        else:
+            base_cmap = mpl.colormaps.get_cmap(color_params[0])
+        
+        if n_colors == 1:
+            cmap = mpl.colors.ListedColormap([base_cmap(0)])
+        else:
+            cmap = self.truncate_colormap(base_cmap, color_params[1],
+                                          color_params[2], n_colors)
+        
+        # ScalarMappable for both plotting & colorbar
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])  # Matplotlib quirk
+        colors = [sm.to_rgba(i) for i in range(1, n_colors+1)]
+        
+        return sm, colors, cmap
+    
+    def truncate_colormap(self, cmap, minval, maxval, n):
+        """Return a truncated copy of a colormap"""
+        new_cmap = LinearSegmentedColormap.from_list(
+            f"trunc({cmap.name},{minval:.2f},{maxval:.2f})",
+            cmap(np.linspace(minval, maxval, n)))
+        return new_cmap
+    
+    def set_legend_labels(self, n_colors, selected_indices=None):
+        """
+        Create legend labels based on user input, automatically filling
+        missing positions with numeric placeholders. Works with selective
+        file/cycle plotting.
+    
+        Parameters
+        ----------
+        n_colors : int
+            Total number of color slots (files or cycles)
+        selected_indices : list[int] or None
+            Indices of files/cycles being plotted (0-based)
+        """
+        # --- Get labels from GUI ---
+        label_strs = self.GUI.labels_for_legend.get().split(',')
+        user_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
+        
+        # Start with default numeric labels
+        legend_labels = [str(i + 1) for i in range(n_colors)]
+        
+        if not user_labels:
+            # No user labels given → just use numbers
+            return legend_labels
+    
+        # --- Match user labels to selected indices ---
+        if len(user_labels) > len(selected_indices):
+            # Too many labels, ignore extras
+            # print(f"Warning: {len(user_labels)} labels provided but only {len(selected_indices)} plotted. Extra labels ignored.")
+            user_labels = user_labels[:len(selected_indices)]
+        elif len(user_labels) < len(selected_indices):
+            # Too few labels, fill the remaining with numbers
+            # e.g. user_labels = ['A', 'B'], selected_indices=[0,2,4]
+            fill_count = len(selected_indices) - len(user_labels)
+            user_labels += [str(i + 1) for i in range(len(user_labels), len(user_labels) + fill_count)]
+        
+        # Map labels to the correct selected indices
+        for idx, user_label in zip(selected_indices, user_labels):
+            if 0 <= idx < n_colors:
+                legend_labels[idx] = user_label
+        
+        return legend_labels
+    
     def add_legend_to_plot(self):
         location = self.GUI.location_for_legend.get()
         handle_length = float(self.GUI.handle_length_legend.get())
@@ -1051,6 +1029,21 @@ class EchemFig():
         
         return marker_style, marker_size, line_style, line_size
     
+    def update_colormap(self):
+        # cmap = self.GUI.plot_cmap.get()
+        
+        cmin = float(self.GUI.echem_cmap_minval.get())
+        cmax = float(self.GUI.echem_cmap_maxval.get())
+        
+        # print('Color map updated')
+        
+        if (cmin < 0) or (cmin > 1) or (cmax < 0) or (cmax > 1):
+            print('\nInvalid input! Min and max must be between 0 and 1.\n')
+            return 0, 1
+        
+        return cmin, cmax
+    
+    # ---- EIS Plots
     def set_params_EIS(self):
         '''
         Grab display options from the GUI and initiate redrawing the plot.
@@ -1629,6 +1622,34 @@ class EchemFig():
         
         return x_shifts, y_shifts, cycles_to_plot
     
+    # ---- Extra Functions
+    def parse_selection(self, selection_str, max_val):
+        """
+        Parse selection strings like '1,3-5' or 'all' into a list of integers.
+        max_val ensures we don’t exceed available indices.
+        """
+        selection_str = selection_str.strip().lower()
+        if selection_str in ('all', ''):
+            return list(range(max_val))
+        
+        result = set()
+        for part in selection_str.split(','):
+            part = part.strip()
+            if '-' in part:
+                start, end = part.split('-')
+                result.update(range(int(start)-1, int(end)))  # zero-indexed
+            else:
+                try:
+                    idx = int(part) - 1
+                    if 0 <= idx < max_val:
+                        result.add(idx)
+                    else:
+                        print(f'{idx} is out of bounds for cycles or files to plot')
+                except ValueError:
+                    print('Error: Cycles and Files are integers separated by commas\nIgnoring...')
+                    pass
+        return sorted(result)
+    
     def clear_artists(self):
         '''
         Removes all artists (except for self.ln) from the figure.
@@ -1645,21 +1666,6 @@ class EchemFig():
                     # Artist may have never been drawn
                     pass
         self.artists = []
-        
-    
-    def update_colormap(self):
-        # cmap = self.GUI.plot_cmap.get()
-        
-        cmin = float(self.GUI.echem_cmap_minval.get())
-        cmax = float(self.GUI.echem_cmap_maxval.get())
-        
-        # print('Color map updated')
-        
-        if (cmin < 0) or (cmin > 1) or (cmax < 0) or (cmax > 1):
-            print('\nInvalid input! Min and max must be between 0 and 1.\n')
-            return 0, 1
-        
-        return cmin, cmax
     
     def load_style_file(self, style_dir):
         self.style_dir = style_dir

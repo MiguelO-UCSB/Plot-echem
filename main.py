@@ -74,9 +74,6 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
     Graphical user interface
     '''
     def __init__(self):
-        ##########################################
-        #             MAIN GUI LAYOUT            # 
-        ##########################################
         self.root = root
         self.params = {} # master dict to store all parameters
                 
@@ -104,7 +101,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.notebookStyle = Style().configure('TNotebook.Tab', font=(self.defaultFont['family'],
                                                                 self.defaultFont['size'],
                                                                 'bold'))
-        # --------- ICON LOADING ---------
+        # ---- ICON LOADING
         if sys.platform.startswith("win"):
             # Windows requires .ico
             logo_path = os.path.join(script_dir, "assets/GUI logo.ico")
@@ -122,7 +119,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         else:
             print("⚠ Icon not supported on this platform.")
         
-        # --------- MENU BAR ---------
+        # ---- MENU BAR
         menubar         = Menu(root)
         root['menu']    = menubar
         
@@ -140,11 +137,8 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         menu_fun.add_command(label='Open Levich Calculator', command=self.macro_RS_RDE)
         menu_fun.add_command(label='Open Microdisk RS Calculator', command=self.micro_RS)
         menu_fun.add_command(label='Fourier Transform Data', command=self.FT_data)
-        
-        ##########################################
-        #         MAIN LAYOUT STARTS HERE        #
-        ##########################################
-        
+
+        # ---- MAIN LAYOUT      
         # Root window stretches
         root.rowconfigure(0, weight=1)
         root.columnconfigure(0, weight=1)
@@ -153,7 +147,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         main_pane = PanedWindow(root, orient="horizontal")
         main_pane.grid(row=0, column=0, sticky="nsew")
         
-        # -------- LEFT PANEL --------
+        # ---- LEFT PANEL
         leftpanel  = Frame(main_pane)
         leftpanel.rowconfigure(0, weight=1)
         leftpanel.columnconfigure(0, weight=1)
@@ -170,7 +164,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         main_pane.add(leftpanel)   # adjustable width
         
-        # -------- RIGHT PANEL --------
+        # ---- RIGHT PANEL
         rightpanel = Frame(main_pane)
         rightpanel.rowconfigure(0, weight=1)  # EchemFrame grows
         rightpanel.columnconfigure(0, weight=1)
@@ -181,7 +175,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         main_pane.add(rightpanel)
         
-        # -------- CONSOLE FRAME --------
+        # ---- CONSOLE FRAME
         ConsoleFrame = Frame(root)
         ConsoleFrame.grid(row=1, column=0, sticky="nsew")
         
@@ -199,11 +193,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self._input_var = None
         self._input_value = None
         
-        
-        ############################################
-        #       CALL EXISTING BUILD FUNCTIONS      #
-        ############################################
-        
+        # ---- GUI SETUP & TRACES
         # All inherited from GUISetupMethods
         self.MakeEchemFrame(EchemFrame, ResizeFrame)
             
@@ -260,29 +250,27 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         # Send print messages to the console
         sys.stdout = PrintLogger(console)
         
-    #################### END __init__ ##############################
+    #################### END __init__ ####################
     
-    ########## GUI CALLBACKS ###########    
+    ########## GUI CALLBACKS ##########   
     
     def openFolder(self):
         folder = filedialog.askdirectory()
         if folder == '':
             print('Error: Folder not chosen')
             return
-        # folder = filedialog.askdirectory(initialdir='Z:\Projects\Miguel\Raw data')
-        # print(f'Folder path: {folder}')
         try:
             extracted_data, file_max = self.read_file(folder, True, self)
         except TypeError:
             return
         # print(file_max, extracted_data[0], extracted_data[1])
+        
         if len(extracted_data) == 0:
             print('Error: No file .txt, .csv, .mat, .asc')
             return
+        
         self.EchemFig.initialize()
         self.update_fig_to_plot(file_max)
-        # if bool_map.get(self.Overlay_.get().strip().lower(), False) == False:
-        #     print('Plotting first file...')
         self.EchemFig.set_data_from_file(extracted_data, file_max)
         self.EchemFig.update_plot()
         return
@@ -303,7 +291,6 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
             extracted_data, file_max = self.read_file(f, Multi_files, self)
         except TypeError:
             return
-        # self.EchemFig.initialize()
 
         self.EchemFig.set_data_from_file([extracted_data], 1)
         self.EchemFig.update_plot()
