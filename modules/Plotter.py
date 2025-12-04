@@ -597,10 +597,16 @@ class EchemFig():
                 lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             
         axis_labels = {'t': f'Time ({self.time_units})', 'V': f'E vs. {ref_label} ({self.ref_units})', 'I': f'Current ({self.current_units})'}
-        try:
-            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect.get())))
-        except ValueError as e:
-            print(f'Error: Box aspect not set beacuse of {e}')
+        
+        box_asp = self.GUI.box_aspect.get()
+        if box_asp != '':
+            try:
+                self.ax.set_box_aspect(abs(float(box_asp)))
+            except ValueError as e:
+                print(f'Error: Box aspect not set beacuse of {e}')
+                self.ax.set_box_aspect(None)
+        else:
+            self.ax.set_box_aspect(None)
             
         self.ax.set_xlabel(axis_labels[xlabel])
         self.ax.set_ylabel(axis_labels[ylabel])
@@ -657,22 +663,21 @@ class EchemFig():
         if location in ['top', 'bottom']:
             orientation = 'horizontal'
         else:
-            location = 'right' # Default to right if not top/bottom
             orientation = 'vertical'
         
         # ---- Get sizing parameters
         try:
             fraction_val = float(self.GUI.fraction_for_cbar.get())
         except (ValueError, AttributeError):
-            fraction_val = 15
+            fraction_val = 3
             
         try:
             pad_val = float(self.GUI.pad_for_cbar.get())
         except (ValueError, AttributeError):
             pad_val = 5
             
-        size_str = f"{fraction_val:.1f}%"
-        pad_str  = f"{pad_val:.1f}%"
+        size_str = f"{fraction_val}%"
+        pad_str  = f"{pad_val}%"
         self.cax = divider.append_axes(location, size=size_str, pad=pad_str)
         
         # Create dummy mappable just to initialize
@@ -684,7 +689,12 @@ class EchemFig():
         self.cbar.update_normal(sm)
         
         # ---- Get labels from GUI
-        self.cbar.set_label(' ')
+        label = self.GUI.cbar_label.get()
+        if label != '':
+            try:
+                self.cbar.set_label(label)
+            except Exception as e:
+                print(f'Error: Colorbar title not set because of error {e}')
         
         label_strs = self.GUI.labels_for_cbar.get().split(',')
         cbar_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
@@ -711,9 +721,18 @@ class EchemFig():
             else:
                 self.cbar.ax.set_xticklabels(cbar_labels)
         
-        if orientation == 'horizontal':
+        if orientation == 'horizontal' and location == 'top':
             # Set the ticks position to the top
             self.cbar.ax.xaxis.set_ticks_position('top')
+            self.cbar.ax.xaxis.set_label_position('top')
+            
+        if orientation == 'horizontal' and location == 'bottom':
+            self.cbar.ax.xaxis.set_ticks_position('bottom')
+            self.cbar.ax.xaxis.set_label_position('bottom')
+            
+        if orientation == 'vertical' and location == 'left':
+            self.cbar.ax.yaxis.set_ticks_position('left')
+            self.cbar.ax.yaxis.set_label_position('left')
         
     def notch_filter(self, i, calc_samp_freq):
         freq_strs = self.GUI.freqs_for_notch_filter.get().split(',')
@@ -1228,12 +1247,17 @@ class EchemFig():
                 lines[2].set_linestyle(self.GUI.lowerright_line_style_Inset.get())
                 lines[3].set_visible(True)      # Upper right
                 lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
+        
+        box_asp = self.GUI.box_aspect_EIS.get()
+        if box_asp != '':
+            try:
+                self.ax.set_box_aspect(abs(float(box_asp)))
+            except ValueError as e:
+                print(f'Error: Box aspect not set beacuse of {e}')
+                self.ax.set_box_aspect(None)
+        else:
+            self.ax.set_box_aspect(None)
             
-            
-        try:
-            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect_EIS.get())))
-        except ValueError as e:
-            print(f'Error: Box aspect not set beacuse of {e}')
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
         self.ax.set_xlabel(f"Z ' ({impedance_units})")
         self.ax.set_ylabel(f"- Z '' ({impedance_units})")
@@ -1441,10 +1465,16 @@ class EchemFig():
                 lines[3].set_linestyle(self.GUI.upperright_line_style_Inset.get())
             count += 1
         
-        try:
-            self.ax.set_box_aspect(abs(float(self.GUI.box_aspect_EIS.get())))
-        except ValueError as e:
-            print(f'Error: Box aspect not set beacuse of {e}')
+        box_asp = self.GUI.box_aspect_EIS.get()
+        if box_asp != '':
+            try:
+                self.ax.set_box_aspect(abs(float(box_asp)))
+            except ValueError as e:
+                print(f'Error: Box aspect not set beacuse of {e}')
+                self.ax.set_box_aspect(None)
+        else:
+            self.ax.set_box_aspect(None)
+            
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
         self.ax.set_xlabel('Frequency (Hz)')
         self.ax.set_ylabel(ylabel)

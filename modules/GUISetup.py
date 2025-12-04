@@ -40,7 +40,7 @@ Impedance_units = ['G\u03A9', 'M\u03A9', 'k\u03A9', '\u03A9']
 
 Axis_scales = ['linear', 'log', 'logit', 'symlog']
 
-Location_cbar = ['right', 'top']
+Location_cbar = ['right', 'top', 'bottom', 'left']
 
 Legend_loc = ['best', 'upper left', 'upper right',
               'lower left', 'lower right','upper center',
@@ -417,7 +417,7 @@ class GUISetupMethods():
         '''Axis'''
         Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
         self.box_aspect = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
-                                                  bind_key='<Return>', default='1')
+                                                  bind_key='<Return>', default='')
         Label(AxisFrame, text='').grid(row=1, column=0, sticky=(E))
         Label(AxisFrame, text='X-axis tick multiple: ').grid(row=2, column=0, sticky=(E))
         self.x_axis_tickmultiple = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
@@ -486,32 +486,24 @@ class GUISetupMethods():
         self.Colorbar_ = OptionMenuStringVar(ColorbarFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         Label(ColorbarFrame, text='Size: ').grid(row=1, column=0, sticky=(E))
         self.fraction_for_cbar = EntryStringVar(ColorbarFrame, 10, 1, 1, (W,E), tab=True,
-                                                  bind_key='<Return>', default='5')
-        # Label(ColorbarFrame, text='Shrink: ').grid(row=2, column=0, sticky=(E))
-        # self.shrink_for_cbar = EntryStringVar(ColorbarFrame, 10, 2, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default='1')
-        # Label(ColorbarFrame, text='Aspect: ').grid(row=3, column=0, sticky=(E))
-        # self.aspect_for_cbar = EntryStringVar(ColorbarFrame, 10, 3, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default='20')
-        Label(ColorbarFrame, text='Pad: ').grid(row=4, column=0, sticky=(E))
-        self.pad_for_cbar = EntryStringVar(ColorbarFrame, 10, 4, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='3')
+        Label(ColorbarFrame, text='Pad: ').grid(row=2, column=0, sticky=(E))
+        self.pad_for_cbar = EntryStringVar(ColorbarFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='5')
         
-        # Label(ColorbarFrame, text='Label: ').grid(row=15, column=0, sticky=(E))
-        # self.cbar_label = EntryStringVar(ColorbarFrame, 10, 15, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default=' ')
+        Label(ColorbarFrame, text='Label: ').grid(row=3, column=0, sticky=(E))
+        self.cbar_label = EntryStringVar(ColorbarFrame, 10, 3, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default=' ')
         
-        Label(ColorbarFrame, text='Location: ').grid(row=16, column=0, sticky=(E))
-        self.Location_for_cbar = OptionMenuStringVar(ColorbarFrame, Location_cbar, 16, 1, (W,E), idx=0,)
+        Label(ColorbarFrame, text='Location: ').grid(row=4, column=0, sticky=(E))
+        self.Location_for_cbar = OptionMenuStringVar(ColorbarFrame, Location_cbar, 4, 1, (W,E), idx=0,)
         
-        Label(ColorbarFrame, text='Tick Labels: ').grid(row=17, column=0, sticky=(E))
-        self.labels_for_cbar = EntryStringVar(ColorbarFrame, 10, 17, 1, (W,E), tab=True,
+        Label(ColorbarFrame, text='Tick Labels: ').grid(row=5, column=0, sticky=(E))
+        self.labels_for_cbar = EntryStringVar(ColorbarFrame, 10, 5, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ColorbarFrame, text='Number of Ticks: ').grid(row=18, column=0, sticky=(E))
-        self.ticknum_for_cbar = EntryStringVar(ColorbarFrame, 10, 18, 1, (W,E), tab=True,
+        Label(ColorbarFrame, text='Number of Ticks: ').grid(row=6, column=0, sticky=(E))
+        self.ticknum_for_cbar = EntryStringVar(ColorbarFrame, 10, 6, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ColorbarFrame, text='').grid(row=19, column=0, sticky=(E))
-        
         
         
     def MakeEISFrame(self, frame):
