@@ -7,10 +7,6 @@ import pandas as pd
 '''
 If multiple files to plot, add them to data folder and set Muti_files to True
 '''
-folder = r'Z:\Projects\Miguel\Raw data\2025\test\HEKA test\20250408.mat'
-Multi_files = False
-Overlay = None
-Integrate = False
 
 class extract_data():
     def __init__(self):
@@ -20,6 +16,7 @@ class extract_data():
         # Local reference to GUI object
         self.GUI = GUI
         
+        # ---- One File only
         Multi_files = MF
         if Multi_files == False:
             file = folder
@@ -48,12 +45,13 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                     
-                if len(get_col) == 3:
+                if len(get_col) == 3 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_OVP(file)
                     print(f'\nPloting OCV .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                 
                 if get_col[0] == 'freq/Hz':
+                    print(len(get_col))
                     if len(get_col) == 6:
                         freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(file)
                         NUM_SWEEPS = 1
@@ -64,12 +62,12 @@ class extract_data():
                             NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file: {file.rsplit("/", 1)[-1]}')
                 
-                if len(get_col) == 4:
+                if len(get_col) == 4 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_no_cycle(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                 
-                if len(get_col) == 5:
+                if len(get_col) == 5 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_norm(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -77,7 +75,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 6:
+                if len(get_col) == 6 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_5norm(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -140,6 +138,7 @@ class extract_data():
             
             return extracted_data, 0
         
+        # ---- Multiple Files
         if Multi_files == True:
             extracted_data = []
             file_num = 0
@@ -176,7 +175,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                     
-                if len(get_col) == 3:
+                if len(get_col) == 3 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_OVP(f)
                     NUM_SWEEPS = 1
                     print(f'\nPloting OCV .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
@@ -192,13 +191,13 @@ class extract_data():
                             NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     
-                if len(get_col) == 4:
+                if len(get_col) == 4 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_no_cycle(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 5:
+                if len(get_col) == 5 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_norm(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -207,7 +206,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 6:
+                if len(get_col) == 6 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_5norm(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -315,7 +314,7 @@ class extract_data():
             return extracted_data, file_max
     
 class extract:
-    
+    # ---- Biologic
     def bio_data_OVP(file):
         df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t')
         
@@ -324,21 +323,6 @@ class extract:
         i = [0 for _ in range(len(t))]
         
         return t, v, i
-    
-    def autolab_data_PEIS(file, type_):
-        if type_ == 'Raw':
-            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';')
-            
-        if type_ == 'Fit':
-            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';')
-        
-        freq = np.array(df['freq'])
-        real_Z = np.array(df['r(Z)'])
-        imag_Z = np.array(df['im(Z)'])
-        abs_Z = np.array(df['|Z|'])
-        phase = np.array(df['phase'])
-        
-        return freq, real_Z, imag_Z, abs_Z, phase
     
     def bio_data_PEIS(file):
         df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t')
@@ -362,16 +346,6 @@ class extract:
         sweeps = np.array(df['nc'])
         
         return freq, real_Z, imag_Z, abs_Z, phase, sweeps
-    
-    def autolab_data_norm(file):
-        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
-        
-        t = np.array(df['t'])
-        v = np.array(df['v'])
-        i = np.array(df['i'])
-        sweeps = np.array(df['cycle number'])
-        
-        return t, v, i, sweeps
     
     def bio_data_no_cycle(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t')
@@ -402,6 +376,33 @@ class extract:
         
         return t, v, i, sweeps
     
+    # ---- AutoLab
+    def autolab_data_norm(file):
+        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
+        
+        t = np.array(df['t'])
+        v = np.array(df['v'])
+        i = np.array(df['i'])
+        sweeps = np.array(df['cycle number'])
+        
+        return t, v, i, sweeps
+    
+    def autolab_data_PEIS(file, type_):
+        if type_ == 'Raw':
+            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';')
+            
+        if type_ == 'Fit':
+            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';')
+        
+        freq = np.array(df['freq'])
+        real_Z = np.array(df['r(Z)'])
+        imag_Z = np.array(df['im(Z)'])
+        abs_Z = np.array(df['|Z|'])
+        phase = np.array(df['phase'])
+        
+        return freq, real_Z, imag_Z, abs_Z, phase
+    
+    # ---- Other
     def seccm_data(file):
         df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1,)
         
@@ -577,4 +578,18 @@ class extract:
 
     
 if __name__ == '__main__':
-    file = extract_data.read_file(folder, Multi_files)                          
+    class DummyGUI:
+        """Minimal replacement for the real GUI object."""
+        def console_input(self, prompt):
+            print(prompt)
+            return input()  # or return a default value for testing
+    
+    folder = r'Z:\Projects\Miguel\Raw data\2025\test\Biologic EIS test'
+    Multi_files = True
+
+    extractor = extract_data()
+    dummy_gui = DummyGUI()
+
+    out = extractor.read_file(folder, Multi_files, dummy_gui)
+    # print("\n--- Extracted Data ---")
+    # print(out)                        

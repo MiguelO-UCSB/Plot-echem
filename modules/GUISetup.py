@@ -12,11 +12,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Add a directory relative to the script's location
 sys.path.append(os.path.join(script_dir, ))
-# print(sys.path)
 
-# Now you can import modules
-# from modules import Plotter
-
+# ---- Lists for GUI
 Overlay_options = ['True', 'False']
 
 bool_map = {"true": True, 'True': True,
@@ -40,7 +37,7 @@ Impedance_units = ['G\u03A9', 'M\u03A9', 'k\u03A9', '\u03A9']
 
 Axis_scales = ['linear', 'log', 'logit', 'symlog']
 
-Location_cbar = ['right', 'top']
+Location_cbar = ['right', 'top', 'bottom', 'left']
 
 Legend_loc = ['best', 'upper left', 'upper right',
               'lower left', 'lower right','upper center',
@@ -88,12 +85,12 @@ marker_str = ["None", ".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8"
 
 peak_analysis_options = ['None', 'Reversible', 'Peak Finder']
 
+# ---- Tkinter Functions
 def where(l, val):
     for i, value in enumerate(l):
         if value == val:
             return i
     raise IndexError
-
 
 def focus_next_widget(event):
     widget = event.widget.tk_focusNext()
@@ -104,7 +101,6 @@ def focus_next_widget(event):
         pass
     return("break")
 
-
 def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = StringVar()
     menu = OptionMenu(frame, var, options[idx],*options)
@@ -113,7 +109,6 @@ def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False
         return var, menu
     return var
 
-
 def OptionMenuIntVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     var = IntVar()
     menu = OptionMenu(frame, var, options[idx],*options)
@@ -121,7 +116,6 @@ def OptionMenuIntVar(frame, options,row,col,sticky,idx=0, return_widget=False):
     if return_widget:
         return var, menu
     return var
-
 
 def EntryStringVar(frame, width, row, col, sticky, default='', bind_key=None,
                    bind_func=None, tab=False, returnTab = False, return_widget=False):
@@ -153,20 +147,21 @@ def widgets_in_column(widgets, column, start_row, sticky):
 class GUISetupMethods():
     
     def MakeUpdateFrame(self, frame):
+        '''Buttons for Updating Plot and Clipboard'''
         # Reset ADC view button
         Button(frame, text='Update Plot',
-               style="Bold.TButton", width=30, 
+               style="Bold.TButton", width=31, 
                command=self.EchemFig.update_plot).grid(
                    row=0, column=0, sticky=(W,E))
         # Copy to Clipboard Button
         Button(frame, text="Copy Figure to Clipboard",
-               style="Bold.TButton", width=30,
+               style="Bold.TButton", width=31,
                command=self.copy_figure_to_clipboard).grid(
                    row=0, column=1, sticky="we", pady=10)
         return
     
     def MakePlotParamsFrame(self, frame):
-        
+        '''Plot Options Frame'''
         Label(frame, text='   Overlay: ').grid(row=0, column=0, sticky=(E))
         self.Overlay_ = OptionMenuStringVar(frame, Overlay_options, 0, 1, (E), idx=1,)
         Label(frame, text='   ').grid(row=0, column=2, sticky=(E))
@@ -187,31 +182,44 @@ class GUISetupMethods():
         self.EIS_view_selection = OptionMenuStringVar(frame, EIS_options, 1, 4, (E))  
                                
     def MakeEchemFrame(self, frame, ResizeFrame):   
-        self.fig = plt.Figure(figsize=(4,4), dpi=150)
-        self.fig.add_subplot(111)
-        
-        self.MakeResizeFrame(ResizeFrame)     
-        
-        # Canvas setup               
-        self.canvas_agg  = FigureCanvasTkAgg(self.fig, master=frame)
+        """
+        Build the plotting canvas inside 'frame'. Use a debounced resize handler
+        so the figure only resizes after the user stops resizing the window.
+        """
+        # Create figure with constrained_layout enabled (handles axes, labels, legends)
+        self.fig = plt.Figure(figsize=(4, 4), dpi=150, constrained_layout=True)
+        self.ax = self.fig.add_subplot(111)
+    
+        # Build resize controls (leftover API)
+        self.MakeResizeFrame(ResizeFrame)
+    
+        # Create the canvas and grid it so it expands with the frame
+        self.canvas_agg = FigureCanvasTkAgg(self.fig, master=frame)
         self.canvas_widget = self.canvas_agg.get_tk_widget()
         self.canvas_widget.grid(row=0, column=0, sticky="nsew")
-        
-        # Allow figure area to expand with window
-        frame.rowconfigure(5, weight=1)
-        for col in range(4):
-            frame.columnconfigure(col, weight=1)
-        
-        # Bind entry changes
-        self.plot_width.trace_add("write", self.on_entry_resize)
-        self.plot_height.trace_add("write", self.on_entry_resize)
     
-        # Bind window/frame size changes
-        self.canvas_widget.bind("<Configure>", self.on_canvas_resize)
-        
-        # --- FIXED: Allow canvas widget to expand ---
-        self.canvas_widget.grid_rowconfigure(0, weight=1)
-        self.canvas_widget.grid_columnconfigure(0, weight=1)
+        # CRITICAL: ensure the parent frame lets row=0/col=0 expand
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+    
+        # Also make sure the canvas internal widget can expand (defensive)
+        # (Note: canvas_widget is not a grid container in the usual sense, but this is harmless)
+        try:
+            self.canvas_widget.rowconfigure(0, weight=1)
+            self.canvas_widget.columnconfigure(0, weight=1)
+        except Exception:
+            pass
+    
+        # Debounce state (used by on_canvas_resize)
+        self._resize_after_id = None
+        self._last_canvas_size = (0, 0)
+        self._manual_size_mode = False  # toggled when user sets manual size
+    
+        # Bind configure events to the canvas; the handler debounces rapid events
+        self.canvas_widget.bind("<Configure>", self.on_canvas_configure)
+    
+        # If you want to draw once now
+        self.canvas_agg.draw_idle()
     
     def MakeResizeFrame(self, frame):
         # Variables for entry boxes
@@ -228,30 +236,119 @@ class GUISetupMethods():
         Label(frame, text='     ').grid(row=3, column=2, sticky=(E))
         Label(frame, text="  Height (in): ").grid(row=3, column=3, pady=10)
         Entry(frame, textvariable=self.plot_height, width=10).grid(row=3, column=4, sticky=E)
+        Button(frame, text="Set Size", command=self.on_entry_resize).grid(row=3, column=5)
+        Button(frame, text="Reset to Auto", command=self.reset_to_auto).grid(row=3, column=6)
     
-    def on_canvas_resize(self, event):
-        """Resize matplotlib figure to match canvas size exactly."""
+        # Keep trace for instant feedback if you want — but it will call the same setter when user types:
+        # avoid trace flooding: we won't call a trace callback per character to prevent noisy behavior.
+        return
+
+    def on_canvas_configure(self, event):
+        """
+        Debounced handler for <Configure> on the canvas widget.
+        We schedule `_apply_canvas_size()` after a short delay so rapid resize
+        events don't cause recursion/flicker.
+        """
+        # If user set manual mode, do nothing — let them control size using the entry/button.
+        if getattr(self, "_manual_size_mode", False):
+            return
+    
+        # Ignore tiny or invalid sizes
+        if not isinstance(event.width, int) or not isinstance(event.height, int):
+            return
         if event.width < 10 or event.height < 10:
             return
-        
-        dpi = self.fig.get_dpi()
-        w_in = event.width / dpi
-        h_in = event.height / dpi
     
-        self.fig.set_size_inches(w_in, h_in, forward=False)
+        current = (event.width, event.height)
+        # If size hasn't changed, ignore
+        if current == getattr(self, "_last_canvas_size", (None, None)):
+            return
+        self._last_canvas_size = current
+    
+        # cancel previous scheduled job
+        if getattr(self, "_resize_after_id", None):
+            try:
+                self.canvas_widget.after_cancel(self._resize_after_id)
+            except Exception:
+                pass
+    
+        # schedule an update after 150 ms of inactivity (tuneable)
+        self._resize_after_id = self.canvas_widget.after(150, self._apply_canvas_size)
+    
+    
+    def _apply_canvas_size(self):
+        """Set the figure size to match the canvas (inches = px / dpi) and redraw."""
+        self._resize_after_id = None
+        w_px = self.canvas_widget.winfo_width()
+        h_px = self.canvas_widget.winfo_height()
+    
+        # Defensive checks
+        if w_px <= 0 or h_px <= 0:
+            return
+    
+        dpi = self.fig.get_dpi()
+    
+        # compute inches and set figure size; forward=False prevents heavy internal forcing
+        w_in = w_px / float(dpi)
+        h_in = h_px / float(dpi)
+    
+        try:
+            # Only set if significantly different to avoid spurious redraws
+            fw, fh = self.fig.get_size_inches()
+            if abs(fw - w_in) > 0.01 or abs(fh - h_in) > 0.01:
+                self.fig.set_size_inches(w_in, h_in, forward=False)
+        except Exception:
+            # fallback - still try to set
+            try:
+                self.fig.set_size_inches(w_in, h_in, forward=False)
+            except Exception:
+                pass
+    
+        # don't call tight_layout here — constrained_layout was enabled at creation
         self.canvas_agg.draw_idle()
     
+    
     def on_entry_resize(self, *args):
-        """User typed a manual width/height → update figure size."""
+        """
+        Called by the 'Set Size' button (and optionally traces).
+        This switches to manual mode and sets the figure size explicitly.
+        """
         try:
             w = float(self.plot_width.get())
             h = float(self.plot_height.get())
+        except Exception:
+            return
+    
+        # Mark manual mode so configure events won't override user choice
+        self._manual_size_mode = True
+    
+        dpi = self.fig.get_dpi()
+        try:
             self.fig.set_size_inches(w, h, forward=True)
-            self.canvas_agg.draw_idle()
-        except ValueError:
-            pass
+        except Exception:
+            self.fig.set_size_inches(w, h, forward=False)
+    
+        # Force an immediate redraw
+        self.canvas_agg.draw_idle()
+    
+    
+    def reset_to_auto(self):
+        """Return to auto-resize mode (window-driven)."""
+        self._manual_size_mode = False
+    
+        # Trigger immediate re-evaluation of canvas size
+        if getattr(self, "_resize_after_id", None):
+            try:
+                self.canvas_widget.after_cancel(self._resize_after_id)
+            except Exception:
+                pass
+            self._resize_after_id = None
+    
+        # Directly call apply function to sync figure to current canvas size
+        self._apply_canvas_size()
     
     def MakePlotTypeFrame(self, frame):
+        '''Main Frame for all Tabs'''
         tabs = Notebook(frame)
         VoltFrame = Frame(tabs)
         EISFrame = Frame(tabs)
@@ -279,7 +376,7 @@ class GUISetupMethods():
         NormFrame = Frame(frame)
         NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Norm'''
+        # ---- Main Frame
         Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
         self.title_name = EntryStringVar(NormFrame, 10, 0, 1, (W), tab=True,
                                                   bind_key='<Return>', default='')
@@ -313,10 +410,10 @@ class GUISetupMethods():
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         inner_tabs.add(ColorbarFrame, text='  Colorbar  ')
         
-        '''Axis'''
+        # ---- Axis Notebook
         Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
         self.box_aspect = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
-                                                  bind_key='<Return>', default='1')
+                                                  bind_key='<Return>', default='')
         Label(AxisFrame, text='').grid(row=1, column=0, sticky=(E))
         Label(AxisFrame, text='X-axis tick multiple: ').grid(row=2, column=0, sticky=(E))
         self.x_axis_tickmultiple = EntryStringVar(AxisFrame, 10, 2, 1, (W,E), tab=True,
@@ -345,7 +442,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(AxisFrame, text='').grid(row=13, column=0, sticky=(E))
         
-        '''Cycles and Files to Plot'''
+        # ---- Cycles and Files to Plot Notebook
         Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
         self.cycles_to_plot = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -358,7 +455,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
         
-        '''Shifts'''
+        # ---- Shifts Notebook
         Label(ShiftsFrame, text='X-axis shifts: ').grid(row=3, column=0, sticky=(E))
         self.x_axis_shifts = EntryStringVar(ShiftsFrame, 10, 3, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -380,37 +477,29 @@ class GUISetupMethods():
         self.end_before_float = EntryStringVar(ShiftsFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        '''Colorbar'''
+        # ---- Colorbar Notebook
         Label(ColorbarFrame, text='Colorbar: ').grid(row=0, column=0, sticky=(E))
         self.Colorbar_ = OptionMenuStringVar(ColorbarFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         Label(ColorbarFrame, text='Size: ').grid(row=1, column=0, sticky=(E))
         self.fraction_for_cbar = EntryStringVar(ColorbarFrame, 10, 1, 1, (W,E), tab=True,
-                                                  bind_key='<Return>', default='5')
-        # Label(ColorbarFrame, text='Shrink: ').grid(row=2, column=0, sticky=(E))
-        # self.shrink_for_cbar = EntryStringVar(ColorbarFrame, 10, 2, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default='1')
-        # Label(ColorbarFrame, text='Aspect: ').grid(row=3, column=0, sticky=(E))
-        # self.aspect_for_cbar = EntryStringVar(ColorbarFrame, 10, 3, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default='20')
-        Label(ColorbarFrame, text='Pad: ').grid(row=4, column=0, sticky=(E))
-        self.pad_for_cbar = EntryStringVar(ColorbarFrame, 10, 4, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='3')
+        Label(ColorbarFrame, text='Pad: ').grid(row=2, column=0, sticky=(E))
+        self.pad_for_cbar = EntryStringVar(ColorbarFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='5')
         
-        # Label(ColorbarFrame, text='Label: ').grid(row=15, column=0, sticky=(E))
-        # self.cbar_label = EntryStringVar(ColorbarFrame, 10, 15, 1, (W,E), tab=True,
-        #                                           bind_key='<Return>', default=' ')
+        Label(ColorbarFrame, text='Label: ').grid(row=3, column=0, sticky=(E))
+        self.cbar_label = EntryStringVar(ColorbarFrame, 10, 3, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default=' ')
         
-        Label(ColorbarFrame, text='Location: ').grid(row=16, column=0, sticky=(E))
-        self.Location_for_cbar = OptionMenuStringVar(ColorbarFrame, Location_cbar, 16, 1, (W,E), idx=0,)
+        Label(ColorbarFrame, text='Location: ').grid(row=4, column=0, sticky=(E))
+        self.Location_for_cbar = OptionMenuStringVar(ColorbarFrame, Location_cbar, 4, 1, (W,E), idx=0,)
         
-        Label(ColorbarFrame, text='Tick Labels: ').grid(row=17, column=0, sticky=(E))
-        self.labels_for_cbar = EntryStringVar(ColorbarFrame, 10, 17, 1, (W,E), tab=True,
+        Label(ColorbarFrame, text='Tick Labels: ').grid(row=5, column=0, sticky=(E))
+        self.labels_for_cbar = EntryStringVar(ColorbarFrame, 10, 5, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ColorbarFrame, text='Number of Ticks: ').grid(row=18, column=0, sticky=(E))
-        self.ticknum_for_cbar = EntryStringVar(ColorbarFrame, 10, 18, 1, (W,E), tab=True,
+        Label(ColorbarFrame, text='Number of Ticks: ').grid(row=6, column=0, sticky=(E))
+        self.ticknum_for_cbar = EntryStringVar(ColorbarFrame, 10, 6, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(ColorbarFrame, text='').grid(row=19, column=0, sticky=(E))
-        
         
         
     def MakeEISFrame(self, frame):
@@ -419,7 +508,7 @@ class GUISetupMethods():
         NormFrame = Frame(frame)
         NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Norm'''
+        # ---- Main Frame
         Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
         self.title_name_EIS = EntryStringVar(NormFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -441,7 +530,7 @@ class GUISetupMethods():
         inner_tabs.add(CyclesFrame, text='  Cycles & Files to Plot  ')
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
         
-        '''Axis'''
+        # ---- Axis Notebook
         Label(AxisFrame, text='Box aspect: ').grid(row=0, column=0, sticky=(E))
         self.box_aspect_EIS = EntryStringVar(AxisFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='1')
@@ -473,7 +562,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(frame, text='').grid(row=13, column=0, sticky=(E))
         
-        '''Cycles and Files to Plot'''
+        # ---- Cycles and Files to Plot Notebook
         Label(CyclesFrame, text='Cycles to Plot: ').grid(row=0, column=0, sticky=(E))
         self.cycles_to_plot_EIS = EntryStringVar(CyclesFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -486,7 +575,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='')
         Label(CyclesFrame, text='(Only for Overlay)').grid(row=3, column=2, sticky=(E))
         
-        '''Shifts'''
+        # ---- Shifts Notebook
         Label(ShiftsFrame, text='X-axis shifts: ').grid(row=0, column=0, sticky=(E))
         self.x_axis_shifts_EIS = EntryStringVar(ShiftsFrame, 10, 0, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
@@ -500,7 +589,7 @@ class GUISetupMethods():
         ColorFrame = Frame(frame)
         ColorFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        '''Color'''
+        # ---- Color Frame
         Label(ColorFrame, text='Color: ').grid(row=1, column=0, sticky=(E))
         
         # First OptionMenu (Category)
@@ -547,7 +636,7 @@ class GUISetupMethods():
         inner_tabs.add(LegendLSMSFrame, text='  Legend, Linestyle, and Makers  ')
         inner_tabs.add(InsetFrame, text='  Inset  ')
         
-        '''Legend'''
+        # ---- Legend Notebook
         Label(LegendLSMSFrame, text='Legend: ').grid(row=0, column=0, sticky=(E))
         self.Legend_ = OptionMenuStringVar(LegendLSMSFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -567,7 +656,7 @@ class GUISetupMethods():
                                                   bind_key='<Return>', default='1.5')
         Label(LegendLSMSFrame, text='').grid(row=8, column=0, sticky=(E))
         
-        '''Linestyle and Makers'''
+        # ---- Linestyle and Makers Notebook
         Label(LegendLSMSFrame, text='Line width: ').grid(row=9, column=0, sticky=(E))
         self.line_width = EntryStringVar(LegendLSMSFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='2')
@@ -592,7 +681,7 @@ class GUISetupMethods():
         self.manual_marker_styles = EntryStringVar(LegendLSMSFrame, 10, 15, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
         
-        '''Inset'''
+        # ---- Inset Notebook
         Label(InsetFrame, text='Inset: ').grid(row=0, column=0, sticky=(E))
         self.Inset_ = OptionMenuStringVar(InsetFrame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -651,6 +740,7 @@ class GUISetupMethods():
         self.lowerright_line_style_Inset = OptionMenuStringVar(InsetFrame, linestyle_str, 18, 3, (W,E), idx=1,)
         
     def MakeDataControlFrame(self, frame):
+        '''Frame for analysis functions'''
         Label(frame, text='Apply Notch Filter: ').grid(row=0, column=0, sticky=(E))
         self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 0, 1, (W,E), idx=1,)
         
@@ -699,6 +789,7 @@ class GUISetupMethods():
         self.plot_cmap.set(new_items[0] if new_items else "")
         
     def MakeExportSettingsFrame(self, frame):
+        '''Frame for Exporting Plots'''
         #Trans - True/False
         #dpi #
         #format - 'png', 'pdf', 'svg', 'jpg'

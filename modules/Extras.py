@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog
+from tkinter import filedialog, font
 from PIL import Image, ImageTk
 import matplotlib
 import os
@@ -27,6 +27,7 @@ def OptionMenuStringVar(frame, options,row,col,sticky,idx=0, return_widget=False
         return var, menu
     return var
 
+# ---- Fourier Transform Block
 class Make_Popup_GUI_Figure():
     
     def __init__(self, GUI):
@@ -371,7 +372,8 @@ class FTdataPopup(Make_Popup_GUI_Figure):
             self.ax_fft.text(freqs_fil[deduped][i]+1, abs(ft_V_fil)[deduped][i],
                              f'{round(freqs_fil[deduped][i], 2)} Hz',
                              ha='left', size=12, rotation='horizontal')
-    
+
+# ---- Reference Electrode Converter Block
 class Make_Popup_GUI():
     
     def __init__(self, GUI):
@@ -477,7 +479,7 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
     def fill_leftframe(self):
         # Put relevant buttons in self.leftframe
         frame = self.leftframe
-        Label(frame, text="Standard").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        Label(frame, text="Standard", font=self.GUI.boldFont).grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # --- Input Section ---
         input_frame = LabelFrame(frame, text="Input", padding="10")
@@ -542,7 +544,7 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
     def fill_rightframe(self):
         # Put relevant buttons in self.rightframe
         frame = self.rightframe
-        Label(frame, text="RHE - pH dependent").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        Label(frame, text="RHE - pH dependent", font=self.GUI.boldFont).grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # --- Input Section ---
         input_frame = LabelFrame(frame, text="Input", padding="10")
@@ -613,7 +615,7 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
     def fill_unitframe(self):
         # Put relevant buttons in self.unitframe
         frame = self.unitframe
-        Label(frame, text="Unit converter").grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        Label(frame, text="Unit converter", font=self.GUI.boldFont).grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         
         # --- Input Section ---
         input_frame = LabelFrame(frame, text="Input", padding="10")
@@ -676,7 +678,8 @@ class ReferenceElecConvPopup(Make_Popup_GUI):
             print(f"An error occurred: {e}")
             for name in self.UNIT_DIC:
                 self.output_vars_unit[name].set("Error")
-                
+
+# ---- Macrodisk Randles–Ševčík Calculator
 class Make_Popup_GUI_macro():
     
     def __init__(self, GUI):
@@ -759,13 +762,13 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         image = image.convert("RGBA")
         self.photo_image_irr = ImageTk.PhotoImage(image)
         
-        Label(frame, text="Reversible").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Reversible", font=self.GUI.boldFont).grid(row=1, column=0, padx=5, pady=5, sticky="w")
         Label(frame, image=self.photo_image_rev).grid(row=2, column=0, padx=5, pady=5, sticky="w")
         text1 = ", where Ip is the peak current, n is the number of electrons, F is Faraday’s constant, A is the area of the working electrode, "
         Label(frame, text=text1).grid(row=2, column=1, padx=5, pady=5, sticky="sw")
         text2 = "D is the diffusion coefficient of reactants with the bulk concentration of [A]bulk, and υ is the scan rate."
         Label(frame, text=text2).grid(row=3, column=1, padx=5, pady=5, sticky="nw")
-        Label(frame, text="Irreversible").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Irreversible", font=self.GUI.boldFont).grid(row=3, column=0, padx=5, pady=5, sticky="w")
         Label(frame, image=self.photo_image_irr).grid(row=4, column=0, padx=5, pady=5, sticky="w")
         
         # ---------------- Frames ----------------
@@ -892,6 +895,7 @@ class MacroRSPopup(Make_Popup_GUI_macro):
         self.output_labels["Diameter"].config(text=f"{np.sqrt(A_calc/np.pi)*20:.3} mm")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
 
+# ---- Macrodisk and Ring Levich Calculator Block
 class Make_Popup_GUI_macro_levich():
     
     def __init__(self, GUI):
@@ -974,13 +978,13 @@ class MacroLevichPopup(Make_Popup_GUI_macro_levich):
         image = image.convert("RGBA")
         self.photo_image_irr = ImageTk.PhotoImage(image)
         
-        Label(frame, text="Limiting Ring Current").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Limiting Ring Current", font=self.GUI.boldFont).grid(row=1, column=0, padx=5, pady=5, sticky="w")
         Label(frame, image=self.photo_image_rev).grid(row=2, column=0, padx=5, pady=5, sticky="w")
         text1 = ", where i is the limiting current, n is the number of electrons, F is Faraday’s constant, D is the diffusion coefficient of reactants"
         Label(frame, text=text1).grid(row=2, column=1, padx=5, pady=5, sticky="sw")
         text2 = "with the bulk concentration of [A]bulk, ω is the angular rotation rate, and υ is the kinematic viscosity."
         Label(frame, text=text2).grid(row=3, column=1, padx=5, pady=5, sticky="nw")
-        Label(frame, text="Limiting Disk Current").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Limiting Disk Current", font=self.GUI.boldFont).grid(row=3, column=0, padx=5, pady=5, sticky="w")
         Label(frame, image=self.photo_image_irr).grid(row=4, column=0, padx=5, pady=5, sticky="w")
         
         # ---------------- Frames ----------------
@@ -1108,7 +1112,8 @@ class MacroLevichPopup(Make_Popup_GUI_macro_levich):
         self.output_labels["Limiting current"].config(text=f"{Ip_calc:.3e} A, {Ip_calc*1000:.3} mA, {Ip_calc*1000000:.3} μA")
         self.output_labels["Concentration"].config(text=f"{C_calc/1e-3:.3e} M, {C_calc*1e6:.3} mM")
         self.output_labels["Diffusion coeff."].config(text=f"{D_calc:.3e} cm²/s")
-        
+
+# ---- Microelectrode Randles–Ševčík Calculator
 class Make_Popup_GUI_micro():
     
     def __init__(self, GUI):
@@ -1170,7 +1175,7 @@ class MicroRSPopup(Make_Popup_GUI_micro):
         # Put relevant buttons in self.leftframe
         frame = self.leftframe_MicroRSPopup
         
-        Label(frame, text="Microelectrode").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Microelectrode", font=self.GUI.boldFont).grid(row=1, column=0, padx=5, pady=5, sticky="w")
         text0 = 'Iss = 4nFDCr'
         Label(frame, text=text0).grid(row=2, column=0, padx=5, pady=5, sticky="se")
         text1 = ", where Iss is the amplitude of the current, n is the number of electrons, F is Faraday’s constant,"
@@ -1178,7 +1183,7 @@ class MicroRSPopup(Make_Popup_GUI_micro):
         text2 = "D is the diffusion coefficient of reactants at concentration C, and r is the radius of the electrode."
         Label(frame, text=text2).grid(row=3, column=1, padx=5, pady=5, sticky="nw")
         
-        Label(frame, text="Nanoparticle on Microelectrode").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        Label(frame, text="Nanoparticle on Microelectrode", font=self.GUI.boldFont).grid(row=4, column=0, padx=5, pady=5, sticky="w")
         text3 = 'Iss = 4π(ln 2)nFDCr'
         Label(frame, text=text3).grid(row=5, column=0, padx=5, pady=5, sticky="se")
         text4 = ", where I is the amplitude of the current, n is the number of electrons, F is Faraday’s constant,"
