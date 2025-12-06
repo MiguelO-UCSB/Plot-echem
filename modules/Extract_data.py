@@ -7,10 +7,6 @@ import pandas as pd
 '''
 If multiple files to plot, add them to data folder and set Muti_files to True
 '''
-folder = r'Z:\Projects\Miguel\Raw data\2025\test\HEKA test\20250408.mat'
-Multi_files = False
-Overlay = None
-Integrate = False
 
 class extract_data():
     def __init__(self):
@@ -49,12 +45,13 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                     
-                if len(get_col) == 3:
+                if len(get_col) == 3 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_OVP(file)
                     print(f'\nPloting OCV .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                 
                 if get_col[0] == 'freq/Hz':
+                    print(len(get_col))
                     if len(get_col) == 6:
                         freq, real_Z, imag_Z, abs_Z, phase = extract.bio_data_PEIS(file)
                         NUM_SWEEPS = 1
@@ -65,12 +62,12 @@ class extract_data():
                             NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file: {file.rsplit("/", 1)[-1]}')
                 
-                if len(get_col) == 4:
+                if len(get_col) == 4 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_no_cycle(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                 
-                if len(get_col) == 5:
+                if len(get_col) == 5 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_norm(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -78,7 +75,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 6:
+                if len(get_col) == 6 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_5norm(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -178,7 +175,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                     
-                if len(get_col) == 3:
+                if len(get_col) == 3 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_OVP(f)
                     NUM_SWEEPS = 1
                     print(f'\nPloting OCV .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
@@ -194,13 +191,13 @@ class extract_data():
                             NUM_SWEEPS = 1
                     print(f'\nPloting EIS .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     
-                if len(get_col) == 4:
+                if len(get_col) == 4 and get_col[0] == 'time/s':
                     Ts, Vs, Is = extract.bio_data_no_cycle(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 5:
+                if len(get_col) == 5 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_norm(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -209,7 +206,7 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                 
-                if len(get_col) == 6:
+                if len(get_col) == 6 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_5norm(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = int(sweeps[-1])
@@ -581,4 +578,18 @@ class extract:
 
     
 if __name__ == '__main__':
-    file = extract_data.read_file(folder, Multi_files)                          
+    class DummyGUI:
+        """Minimal replacement for the real GUI object."""
+        def console_input(self, prompt):
+            print(prompt)
+            return input()  # or return a default value for testing
+    
+    folder = r'Z:\Projects\Miguel\Raw data\2025\test\Biologic EIS test'
+    Multi_files = True
+
+    extractor = extract_data()
+    dummy_gui = DummyGUI()
+
+    out = extractor.read_file(folder, Multi_files, dummy_gui)
+    # print("\n--- Extracted Data ---")
+    # print(out)                        

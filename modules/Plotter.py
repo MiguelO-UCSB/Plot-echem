@@ -341,7 +341,8 @@ class EchemFig():
         except Exception:
             selected_files = list(range(self.file_max))
         
-        x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS)
+        if self.file_num in selected_files:
+            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS)
         
         if Overlay:
             selected_indices = selected_files
@@ -745,7 +746,7 @@ class EchemFig():
             cycles_strs = self.GUI.cycles_to_plot.get()
             
         else:
-            cycles_strs = self.GUI.console_input('Input cycles to plot (comma separated)>>\n')
+            cycles_strs = self.GUI.console_input(f'Input cycles to plot for file {self.file_num+1} (comma separated)>>\n')
         
         cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
             
@@ -1094,8 +1095,9 @@ class EchemFig():
             selected_files = self.parse_selection(self.GUI.files_to_plot_EIS.get(), self.file_max)
         except Exception:
             selected_files = list(range(self.file_max))
-            
-        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(self.NUM_SWEEPS)
+        
+        if self.file_num in selected_files:
+            x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(self.NUM_SWEEPS)
         
         if Overlay:
             selected_indices = selected_files
@@ -1288,8 +1290,9 @@ class EchemFig():
             selected_files = self.parse_selection(self.GUI.files_to_plot_EIS.get(), self.file_max)
         except Exception:
             selected_files = list(range(self.file_max))
-            
-        x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(n_colors)
+        
+        if self.file_num in selected_files:
+            x_shifts, y_shifts, cycles_to_plot = self.set_EIS_shifts(n_colors)
         
         if Overlay:
             selected_indices = selected_files
@@ -1592,7 +1595,7 @@ class EchemFig():
             cycles_strs = self.GUI.cycles_to_plot_EIS.get()
             
         else:
-            cycles_strs = self.GUI.console_input('Input cycles to plot (comma separated)>>\n')
+            cycles_strs = self.GUI.console_input(f'Input cycles to plot for file {self.file_num+1} (comma separated)>>\n')
         
         cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
         
@@ -1644,7 +1647,7 @@ class EchemFig():
                     if 0 <= idx < max_val:
                         result.add(idx)
                     else:
-                        print(f'{idx} is out of bounds for cycles or files to plot')
+                        print(f'Warning {idx+1} is out of bounds for cycles or files to plot')
                 except ValueError:
                     print('Error: Cycles and Files are integers separated by commas\nIgnoring...')
                     pass
