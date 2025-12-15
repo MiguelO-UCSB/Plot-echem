@@ -351,8 +351,14 @@ class EchemFig():
             
         legend_labels = self.set_legend_labels(n_colors, selected_indices)
         
+        file_num = getattr(self, "file_num", 0)
+        area = 1                                            # Area of electrode
+        Apply_current_density = bool_map.get(self.GUI.CurrentDensity_.get().strip().lower(), False)
+        if Apply_current_density == True:
+            if file_num in selected_files:
+                area = self.set_area_for_current_density()
+                        
         for count in range(self.NUM_SWEEPS):
-            file_num = getattr(self, "file_num", 0)
             if file_num not in selected_files:
                 continue
             if count not in cycles_to_plot:
@@ -374,7 +380,7 @@ class EchemFig():
             
             if ylabel == 'I':
                     yunits = current_unit_conv[self.current_units]
-                    yvals = yvals/yunits
+                    yvals = yvals/yunits/area
             
             # Option to import partical data set
             start_mask = None
@@ -602,6 +608,10 @@ class EchemFig():
             
         axis_labels = {'t': f'Time ({self.time_units})', 'V': f'E vs. {ref_label} ({self.ref_units})', 'I': f'Current ({self.current_units})'}
         
+        if Apply_current_density == True:
+            area_units = self.GUI.curr_den_units.get()
+            axis_labels['I'] = f'Current Density ({self.current_units}/{area_units})'
+        
         box_asp = self.GUI.box_aspect.get()
         if box_asp != '':
             try:
@@ -747,6 +757,7 @@ class EchemFig():
             
         else:
             cycles_strs = self.GUI.console_input(f'Input cycles to plot for file {self.file_num+1} (comma separated)>>\n')
+            print(f'Plotting cycles {cycles_strs} for file {self.file_num+1}')
         
         cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
             
@@ -776,6 +787,28 @@ class EchemFig():
         
         return x_shifts, y_shifts, cycles_to_plot
     
+    def set_area_for_current_density(self):
+        # --- Get area from GUI or manual from Console ---
+        manual = bool_map.get(self.GUI.curr_den_area_manual.get().strip().lower(), False)
+        
+        if manual == False:
+            area_str = self.GUI.curr_den_area.get()
+            
+        else:
+            area_str = self.GUI.console_input(f'Input electrode area for file {self.file_num+1}>>\n')
+            print(f'Setting {area_str} cm² as area for file {self.file_num+1}')
+        
+        try:
+            area_float = float(area_str)
+            if self.GUI.curr_den_units.get() == 'm²':
+                area_float = area_float/10000                # 1 m² = 10000 cm²
+                
+        except Exception as e:
+            print(f'Error: Input for area incorrect becuase of {e}\nSetting area = 1')
+            area_float = 1
+        
+        return area_float
+            
     def update_plotlim(self):
         '''
         Set Axis limits and tick multiples for IV plots

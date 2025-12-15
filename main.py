@@ -211,12 +211,14 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         self.Reference_update.trace('w', self.fig_opt_changed)
         self.PotentialUnits_.trace('w', self.fig_opt_changed)
         self.TimeUnits_.trace('w', self.fig_opt_changed)
+        self.Colorbar_.trace('w', self.fig_opt_changed)
+        self.Location_for_cbar.trace('w', self.fig_opt_changed)
+        self.CurrentDensity_.trace('w', self.fig_opt_changed)
+        self.curr_den_units.trace('w', self.fig_opt_changed)
         
         # Both
         self.Overlay_.trace('w', self.fig_opt_changed)
         self.plot_cmap.trace('w', self.fig_opt_changed)
-        self.Colorbar_.trace('w', self.fig_opt_changed)
-        self.Location_for_cbar.trace('w', self.fig_opt_changed)
         
         # EIS traces
         self.EIS_view_selection.trace('w', self.fig_opt_changed)
