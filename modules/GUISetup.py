@@ -39,6 +39,8 @@ Axis_scales = ['linear', 'log', 'logit', 'symlog']
 
 Location_cbar = ['right', 'top', 'bottom', 'left']
 
+Curr_den_units = ['m²', 'cm²']
+
 Legend_loc = ['best', 'upper left', 'upper right',
               'lower left', 'lower right','upper center',
               'lower center', 'center left', 'center right', 'center']
@@ -403,11 +405,13 @@ class GUISetupMethods():
         AxisFrame = Frame(inner_tabs)
         CyclesFrame = Frame(inner_tabs)
         ShiftsFrame = Frame(inner_tabs)
+        DensityFrame = Frame(inner_tabs)
         ColorbarFrame = Frame(inner_tabs)
         
         inner_tabs.add(AxisFrame, text='  Axis  ')
         inner_tabs.add(CyclesFrame, text='  Cycles & Files to Plot  ')
         inner_tabs.add(ShiftsFrame, text='  Shifts  ')
+        inner_tabs.add(DensityFrame, text='  Current Density  ')
         inner_tabs.add(ColorbarFrame, text='  Colorbar  ')
         
         # ---- Axis Notebook
@@ -476,6 +480,22 @@ class GUISetupMethods():
         self.end_before_var = OptionMenuStringVar(ShiftsFrame, mask_options, 9, 0, (E), idx=0)
         self.end_before_float = EntryStringVar(ShiftsFrame, 10, 9, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
+        
+        # ---- Current Density Notebook
+        Label(DensityFrame, text='Current Density: ').grid(row=0, column=0, sticky=(E))
+        self.CurrentDensity_ = OptionMenuStringVar(DensityFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        
+        Label(DensityFrame, text='Area Units: ').grid(row=1, column=0, sticky=(E))
+        self.curr_den_units = OptionMenuStringVar(DensityFrame, Curr_den_units, 1, 1, (W,E), idx=1,)
+        
+        Label(DensityFrame, text='Area: ').grid(row=2, column=0, sticky=(E))
+        self.curr_den_area = EntryStringVar(DensityFrame, 10, 2, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(DensityFrame, text='cm²').grid(row=2, column=2, sticky=(W))
+        
+        Label(DensityFrame, text='Manual Input: ').grid(row=3, column=0, sticky=(E))
+        self.curr_den_area_manual = OptionMenuStringVar(DensityFrame, Overlay_options, 3, 1, (W,E), idx=1,)
+        Label(DensityFrame, text='(If Areas are different)').grid(row=3, column=2, sticky=(E))
         
         # ---- Colorbar Notebook
         Label(ColorbarFrame, text='Colorbar: ').grid(row=0, column=0, sticky=(E))
