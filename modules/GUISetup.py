@@ -164,24 +164,12 @@ class GUISetupMethods():
     
     def MakePlotParamsFrame(self, frame):
         '''Plot Options Frame'''
-        Label(frame, text='   Overlay: ').grid(row=0, column=0, sticky=(E))
+        Label(frame, text='      Overlay: ').grid(row=0, column=0, sticky=(E))
         self.Overlay_ = OptionMenuStringVar(frame, Overlay_options, 0, 1, (E), idx=1,)
-        Label(frame, text='   ').grid(row=0, column=2, sticky=(E))
-        Label(frame, text='   File selection: ').grid(row=0, column=3)
+        Label(frame, text='    File selection: ').grid(row=0, column=3)
         # PointsList selection options
         self.fig2ptselection, self.fig2ptoptmenu = OptionMenuIntVar(frame, [1,], 0, 4, (W),
                                                                     return_widget=True)
-        
-        Label(frame, text='   Plot type: ').grid(row=1, column=0)
-        # Voltammetry view options
-        self.fig2selection, self.fig2typeoptmenu = OptionMenuStringVar(
-                                                frame, fig2Options,idx=2,
-                                                row=1, col=1, sticky=(E),
-                                                return_widget=True)
-        Label(frame, text='   ').grid(row=1, column=2, sticky=(E))
-        Label(frame, text='   EIS type: ').grid(row=1, column=3, sticky=(E), pady=10)
-        # EIS view options
-        self.EIS_view_selection = OptionMenuStringVar(frame, EIS_options, 1, 4, (E))  
                                
     def MakeEchemFrame(self, frame, ResizeFrame):   
         """
@@ -235,8 +223,8 @@ class GUISetupMethods():
         # Labels and entries
         Label(frame, text="  Width (in): ").grid(row=3, column=0)
         Entry(frame, textvariable=self.plot_width, width=10).grid(row=3, column=1, sticky=E)
-        Label(frame, text='     ').grid(row=3, column=2, sticky=(E))
-        Label(frame, text="  Height (in): ").grid(row=3, column=3, pady=10)
+        Label(frame, text="   ").grid(row=3, column=2)
+        Label(frame, text=" Height (in): ").grid(row=3, column=3, pady=10)
         Entry(frame, textvariable=self.plot_height, width=10).grid(row=3, column=4, sticky=E)
         Button(frame, text="Set Size", command=self.on_entry_resize).grid(row=3, column=5)
         Button(frame, text="Reset to Auto", command=self.reset_to_auto).grid(row=3, column=6)
@@ -376,26 +364,33 @@ class GUISetupMethods():
         '''Make Frame for Voltamperometric Tab'''
         
         NormFrame = Frame(frame)
-        NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
+        NormFrame.grid(row=0, column=0, sticky=(N,S,E,W))
         
         # ---- Main Frame
-        Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
-        self.title_name = EntryStringVar(NormFrame, 10, 0, 1, (W), tab=True,
+        Label(NormFrame, text='Plot type: ').grid(row=0, column=0, sticky=(E), pady=10)
+        # Voltammetry view options
+        self.fig2selection, self.fig2typeoptmenu = OptionMenuStringVar(
+                                                NormFrame, fig2Options,idx=2,
+                                                row=0, col=1, sticky=(E),
+                                                return_widget=True)
+        
+        Label(NormFrame, text='Title: ').grid(row=2, column=0, sticky=(E))
+        self.title_name = EntryStringVar(NormFrame, 10, 2, 1, (W), tab=True,
                                                   bind_key='<Return>', default='')
         
-        Label(NormFrame, text='Time Units: ').grid(row=1, column=0, sticky=(E))
-        self.TimeUnits_ = OptionMenuStringVar(NormFrame, Time_Units, 1, 1, (W), idx=2)
+        Label(NormFrame, text='Time Units: ').grid(row=3, column=0, sticky=(E))
+        self.TimeUnits_ = OptionMenuStringVar(NormFrame, Time_Units, 3, 1, (W), idx=2)
         
-        Label(NormFrame, text='Reference Type: ').grid(row=2, column=0, sticky=(E))
-        self.Reference_update = OptionMenuStringVar(NormFrame, Reference_, 2, 1, (W))
+        Label(NormFrame, text='Reference Type: ').grid(row=4, column=0, sticky=(E))
+        self.Reference_update = OptionMenuStringVar(NormFrame, Reference_, 4, 1, (W))
         
-        Label(NormFrame, text='Potential Units: ').grid(row=3, column=0, sticky=(E))
-        self.PotentialUnits_ = OptionMenuStringVar(NormFrame, Potential_Units, 3, 1, (W), idx=1)
+        Label(NormFrame, text='Potential Units: ').grid(row=5, column=0, sticky=(E))
+        self.PotentialUnits_ = OptionMenuStringVar(NormFrame, Potential_Units, 5, 1, (W), idx=1)
         
-        Label(NormFrame, text='Current Units: ').grid(row=4, column=0, sticky=(E))
-        self.CurrentUnits_ = OptionMenuStringVar(NormFrame, Current_Units, 4, 1, (W))
+        Label(NormFrame, text='Current Units: ').grid(row=6, column=0, sticky=(E))
+        self.CurrentUnits_ = OptionMenuStringVar(NormFrame, Current_Units, 6, 1, (W))
         
-        Label(NormFrame, text='').grid(row=5, column=0, sticky=(E))
+        Label(NormFrame, text='').grid(row=7, column=0, sticky=(E))
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
@@ -526,16 +521,20 @@ class GUISetupMethods():
         '''Make Frame for EIS tab'''
         
         NormFrame = Frame(frame)
-        NormFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
+        NormFrame.grid(row=0, column=0, sticky=(N,S,E,W))
         
         # ---- Main Frame
-        Label(NormFrame, text='Title: ').grid(row=0, column=0, sticky=(E))
-        self.title_name_EIS = EntryStringVar(NormFrame, 10, 0, 1, (W,E), tab=True,
+        Label(NormFrame, text='Plot type: ').grid(row=0, column=0, sticky=(E), pady=10)
+        # EIS view options
+        self.EIS_view_selection = OptionMenuStringVar(NormFrame, EIS_options, 0, 1, (E))  
+        
+        Label(NormFrame, text='Title: ').grid(row=2, column=0, sticky=(E))
+        self.title_name_EIS = EntryStringVar(NormFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(NormFrame, text='Impedance Units: ').grid(row=2, column=0, sticky=(E))
-        self.ImpedanceUnits_ = OptionMenuStringVar(NormFrame, Impedance_units, 2, 1, (W,E), idx=3)
-        Label(NormFrame, text='Scale: ').grid(row=3, column=0, sticky=(E))
-        self.Scale_EIS = OptionMenuStringVar(NormFrame, Axis_scales, 3, 1, (W,E), idx=0,)
+        Label(NormFrame, text='Impedance Units: ').grid(row=3, column=0, sticky=(E))
+        self.ImpedanceUnits_ = OptionMenuStringVar(NormFrame, Impedance_units, 3, 1, (W,E), idx=3)
+        Label(NormFrame, text='Scale: ').grid(row=4, column=0, sticky=(E))
+        self.Scale_EIS = OptionMenuStringVar(NormFrame, Axis_scales, 4, 1, (W,E), idx=0,)
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
@@ -644,6 +643,14 @@ class GUISetupMethods():
                                                   bind_key='<Return>', bind_func=
                                                   self.EchemFig.update_colormap(),
                                                   default='1')
+        Label(ColorFrame, text='').grid(row=3, column=0, sticky=(E))
+        
+        Label(ColorFrame, text='X-axis Custom Label: ').grid(row=4, column=0, sticky=(E))
+        self.x_custom_label = EntryStringVar(ColorFrame, 15, 4, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
+        Label(ColorFrame, text='Y-axis Custom Label: ').grid(row=5, column=0, sticky=(E))
+        self.y_custom_label = EntryStringVar(ColorFrame, 15, 5, 1, (W,E), tab=True,
+                                                  bind_key='<Return>', default='')
         
         # Make Nested Notebooks
         inner_tabs = Notebook(frame)
@@ -761,38 +768,46 @@ class GUISetupMethods():
         
     def MakeDataControlFrame(self, frame):
         '''Frame for analysis functions'''
-        Label(frame, text='Apply Notch Filter: ').grid(row=0, column=0, sticky=(E))
-        self.apply_notch_filter = OptionMenuStringVar(frame, Overlay_options, 0, 1, (W,E), idx=1,)
         
-        Label(frame, text='Frequencies: ').grid(row=1, column=0, sticky=(E))
-        self.freqs_for_notch_filter = EntryStringVar(frame, 10, 1, 1, (W,E), tab=True,
+        # ---- Notch Filter Frame
+        NotchFrame = Frame(frame)
+        NotchFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
+        
+        Label(NotchFrame, text='Apply Notch Filter: ').grid(row=0, column=0, sticky=(E))
+        self.apply_notch_filter = OptionMenuStringVar(NotchFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        Label(NotchFrame, text='Frequencies: ').grid(row=1, column=0, sticky=(E))
+        self.freqs_for_notch_filter = EntryStringVar(NotchFrame, 10, 1, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(frame, text='').grid(row=2, column=0, sticky=(E))
-        Label(frame, text='Peak Analysis: ').grid(row=6, column=0, sticky=(E))
-        self.AnalyzePeak_ = OptionMenuStringVar(frame, peak_analysis_options, 6, 1, (W,E), idx=0,)
-        Label(frame, text='Prominence: ').grid(row=7, column=0, sticky=(E))
-        self.prominence_peak = EntryStringVar(frame, 10, 7, 1, (W), tab=True,
+        
+        # ---- Peak Finder & Analysis Frame
+        PeakFrame = Frame(frame)
+        PeakFrame.grid(row=1, column=0, sticky=(N,S,E,W), pady=10)
+        
+        Label(PeakFrame, text='         Peak Analysis: ').grid(row=6, column=0, sticky=(E))
+        self.AnalyzePeak_ = OptionMenuStringVar(PeakFrame, peak_analysis_options, 6, 1, (W,E), idx=0,)
+        Label(PeakFrame, text='Prominence: ').grid(row=7, column=0, sticky=(E))
+        self.prominence_peak = EntryStringVar(PeakFrame, 10, 7, 1, (W), tab=True,
                                                   bind_key='<Return>', default='1e-2')
-        Label(frame, text='Height: ').grid(row=7, column=2, sticky=(E))
-        self.height_peak = EntryStringVar(frame, 10, 7, 3, (W), tab=True,
+        Label(PeakFrame, text='Height: ').grid(row=7, column=2, sticky=(E))
+        self.height_peak = EntryStringVar(PeakFrame, 10, 7, 3, (W), tab=True,
                                                   bind_key='<Return>', default='1e-2')
-        Label(frame, text='Oxidative Volt: ').grid(row=8, column=0, sticky=(E))
-        self.oxidative_baseline_voltage = EntryStringVar(frame, 10, 8, 1, (W), tab=True,
+        Label(PeakFrame, text='Oxidative Volt: ').grid(row=8, column=0, sticky=(E))
+        self.oxidative_baseline_voltage = EntryStringVar(PeakFrame, 10, 8, 1, (W), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(frame, text='Reductive Volt: ').grid(row=8, column=2, sticky=(E))
-        self.reductive_baseline_voltage = EntryStringVar(frame, 10, 8, 3, (W), tab=True,
+        Label(PeakFrame, text='Reductive Volt: ').grid(row=8, column=2, sticky=(E))
+        self.reductive_baseline_voltage = EntryStringVar(PeakFrame, 10, 8, 3, (W), tab=True,
                                                   bind_key='<Return>', default='')
-        Label(frame, text='Peak Color: ').grid(row=9, column=0, sticky=(E))
-        self.peak_analysis_color = EntryStringVar(frame, 10, 9, 1, (W), tab=True,
+        Label(PeakFrame, text='Peak Color: ').grid(row=9, column=0, sticky=(E))
+        self.peak_analysis_color = EntryStringVar(PeakFrame, 10, 9, 1, (W), tab=True,
                                                   bind_key='<Return>', default='red')
-        Label(frame, text='Baseline Color: ').grid(row=9, column=2, sticky=(E))
-        self.baseline_analysis_color = EntryStringVar(frame, 10, 9, 3, (W), tab=True,
+        Label(PeakFrame, text='Baseline Color: ').grid(row=9, column=2, sticky=(E))
+        self.baseline_analysis_color = EntryStringVar(PeakFrame, 10, 9, 3, (W), tab=True,
                                                   bind_key='<Return>', default='green')
-        Label(frame, text='Line width: ').grid(row=10, column=0, sticky=(E))
-        self.baseline_analysis_line_width = EntryStringVar(frame, 10, 10, 1, (W), tab=True,
+        Label(PeakFrame, text='Line width: ').grid(row=10, column=0, sticky=(E))
+        self.baseline_analysis_line_width = EntryStringVar(PeakFrame, 10, 10, 1, (W), tab=True,
                                                   bind_key='<Return>', default='1')
-        Label(frame, text='Line Style: ').grid(row=10, column=2, sticky=(E))
-        self.baseline_analysis_line_style = OptionMenuStringVar(frame, linestyle_str, 10, 3, (W,E), idx=3,)
+        Label(PeakFrame, text='Line Style: ').grid(row=10, column=2, sticky=(E))
+        self.baseline_analysis_line_style = OptionMenuStringVar(PeakFrame, linestyle_str, 10, 3, (W,E), idx=3,)
     
     def update_items(self, selected_category):
         # Clear existing options in the item menu
@@ -813,14 +828,17 @@ class GUISetupMethods():
         #Trans - True/False
         #dpi #
         #format - 'png', 'pdf', 'svg', 'jpg'
-        Label(frame, text='Transparent: ').grid(row=1, column=0, sticky=(E))
-        self.Transparency = OptionMenuStringVar(frame, Overlay_options, 1, 1, (W,E), idx=1,)
+        ExportFrame = Frame(frame)
+        ExportFrame.grid(row=0, column=0, sticky=(N,S,E,W), pady=10)
         
-        Label(frame, text='dpi: ').grid(row=2, column=0, sticky=(E))
-        self.dpi = EntryStringVar(frame, 10, 2, 1, (W,E), tab=True,
+        Label(ExportFrame, text='Transparent: ').grid(row=1, column=0, sticky=(E))
+        self.Transparency = OptionMenuStringVar(ExportFrame, Overlay_options, 1, 1, (W,E), idx=1,)
+        
+        Label(ExportFrame, text='dpi: ').grid(row=2, column=0, sticky=(E))
+        self.dpi = EntryStringVar(ExportFrame, 10, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', default='300')
         
-        Label(frame, text='Format: ').grid(row=3, column=0, sticky=(E))
-        self.Export_format = OptionMenuStringVar(frame, Export_format_types, 3, 1, (W,E), idx=0)
+        Label(ExportFrame, text='Format: ').grid(row=3, column=0, sticky=(E))
+        self.Export_format = OptionMenuStringVar(ExportFrame, Export_format_types, 3, 1, (W,E), idx=0)
         
-        Label(frame, text='').grid(row=4, column=0, sticky=(E))
+        Label(ExportFrame, text='').grid(row=4, column=0, sticky=(E))

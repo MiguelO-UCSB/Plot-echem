@@ -610,7 +610,7 @@ class EchemFig():
         
         if Apply_current_density == True:
             area_units = self.GUI.curr_den_units.get()
-            axis_labels['I'] = f'Current Density ({self.current_units}/{area_units})'
+            axis_labels['I'] = f'J ({self.current_units}/{area_units})'
         
         box_asp = self.GUI.box_aspect.get()
         if box_asp != '':
@@ -621,9 +621,19 @@ class EchemFig():
                 self.ax.set_box_aspect(None)
         else:
             self.ax.set_box_aspect(None)
+        
+        cus_xlabel = self.GUI.x_custom_label.get()
+        cus_ylabel = self.GUI.y_custom_label.get()
+        if cus_xlabel == '':
+            self.ax.set_xlabel(axis_labels[xlabel])
+        else:
+            self.ax.set_xlabel(cus_xlabel)
+        
+        if cus_ylabel == '':
+            self.ax.set_ylabel(axis_labels[ylabel])
+        else:
+            self.ax.set_ylabel(cus_ylabel)
             
-        self.ax.set_xlabel(axis_labels[xlabel])
-        self.ax.set_ylabel(axis_labels[ylabel])
         self.ax.set_xscale('linear')
         self.update_plotlim()
         
@@ -1287,8 +1297,19 @@ class EchemFig():
             self.ax.set_box_aspect(None)
             
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
-        self.ax.set_xlabel(f"Z ' ({impedance_units})")
-        self.ax.set_ylabel(f"- Z '' ({impedance_units})")
+        
+        cus_xlabel = self.GUI.x_custom_label.get()
+        cus_ylabel = self.GUI.y_custom_label.get()
+        if cus_xlabel == '':
+            self.ax.set_xlabel(f"Z ' ({impedance_units})")
+        else:
+            self.ax.set_xlabel(cus_xlabel)
+        
+        if cus_ylabel == '':
+            self.ax.set_ylabel(f"- Z '' ({impedance_units})")
+        else:
+            self.ax.set_ylabel(cus_ylabel)
+        
         self.update_plotlim_EIS()
         
         title = self.GUI.title_name_EIS.get()
@@ -1505,8 +1526,19 @@ class EchemFig():
             self.ax.set_box_aspect(None)
             
         self.ax.set_xscale(self.GUI.Scale_EIS.get())
-        self.ax.set_xlabel('Frequency (Hz)')
-        self.ax.set_ylabel(ylabel)
+        
+        cus_xlabel = self.GUI.x_custom_label.get()
+        cus_ylabel = self.GUI.y_custom_label.get()
+        if cus_xlabel == '':
+            self.ax.set_xlabel('Frequency (Hz)')
+        else:
+            self.ax.set_xlabel(cus_xlabel)
+        
+        if cus_ylabel == '':
+            self.ax.set_ylabel(ylabel)
+        else:
+            self.ax.set_ylabel(cus_ylabel)
+        
         self.update_plotlim_EIS()
         
         title = self.GUI.title_name_EIS.get()
