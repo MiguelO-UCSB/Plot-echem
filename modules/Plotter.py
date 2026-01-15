@@ -1,6 +1,7 @@
 import matplotlib as mpl
 from matplotlib import pyplot as plt, cm, ticker as tk
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap, is_color_like
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, is_color_like, to_rgba
+import ast
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -944,18 +945,32 @@ class EchemFig():
     def set_colormap_for_plot(self, n_colors):
         # Colormap option from GUI
         cmin, cmax = self.update_colormap()
+        category = self.GUI.category_var.get()
         cmap = self.GUI.plot_cmap.get()
         color_params = [cmap, cmin, cmax]
         
         # Normalization maps sweep/file index -> colormap fraction
         norm = mpl.colors.Normalize(vmin=1, vmax=n_colors)
         
+        # ---- CUSTOM CATEGORY
+        if category == "Custom":
+            text = self.GUI.custom_color_var.get()
+    
+            if cmap == "Single color":
+                color = self.parse_color_list(text)[0]
+                base_cmap = ListedColormap([color])
+    
+            else:  # Manual or From list
+                colors = self.parse_color_list(text)
+                base_cmap = ListedColormap(colors)
+            
         # Colormap from your params
-        if color_params[0] == 'Default':
+        elif color_params[0] == 'Default':
             prop_cycle = mpl.rcParams['axes.prop_cycle']
             default_colors = prop_cycle.by_key()['color']
             # base_cmap = LinearSegmentedColormap.from_list("style_cycle_interp", default_colors, N=256)
             base_cmap = ListedColormap(default_colors, name="style_cycle_cmap")
+        
         else:
             base_cmap = mpl.colormaps.get_cmap(color_params[0])
         
@@ -972,6 +987,23 @@ class EchemFig():
         
         return sm, colors, cmap
     
+    def parse_color_list(self, text):
+        colors = []
+        for token in text.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            try:
+                if token.startswith("("):
+                    colors.append(ast.literal_eval(token))
+                else:
+                    colors.append(token)
+                to_rgba(colors[-1])  # validate
+            except Exception as e:
+                print(f'Error: {e}')
+                colors = ['k']
+        return colors
+
     def truncate_colormap(self, cmap, minval, maxval, n):
         """Return a truncated copy of a colormap"""
         new_cmap = LinearSegmentedColormap.from_list(

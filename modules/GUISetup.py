@@ -53,6 +53,7 @@ mask_options = ['t', 'V', 'I']
 
 # Data for the cascading OptionMenus
 cmaps_data = {
+    'Custom' : ['Manual list', 'Single color'],
     'Sequential 1': ['viridis', 'plasma', 'inferno', 'magma', 'cividis'],
     'Sequential 2': ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
                       'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
@@ -626,13 +627,23 @@ class GUISetupMethods():
         self.cmap_options = OptionMenu(ColorFrame, self.plot_cmap,'',
                                        command=self.EchemFig.update_plot)
         self.cmap_options.grid(row=1, column=3, sticky=(E))  # Initial empty OptionMenu
-
+        
+        self.custom_color_var = StringVar()
+        self.custom_color_var.set('black, red, blue, green')  # helpful default
+        
+        self.custom_color_entry = Entry(
+            ColorFrame,
+            textvariable=self.custom_color_var,
+            width=20
+        )
+        self.custom_color_entry.grid(row=1, column=4, sticky=(W))
+        
         # Initially populate the items menu based on the default category
         self.update_items(self.category_var.get())
         
         self.echem_cmap_minval = StringVar(value='0')
         self.echem_cmap_maxval = StringVar(value='1')
-        
+
         Label(ColorFrame, text='Min: ').grid(row=2, column=0, sticky=(E))
         self.echem_cmap_minval = EntryStringVar(ColorFrame, 15, 2, 1, (W,E), tab=True,
                                                   bind_key='<Return>', bind_func=
@@ -822,6 +833,11 @@ class GUISetupMethods():
 
         # Set the default for the plot_cmap to the first item in the new list, or an empty string if no items
         self.plot_cmap.set(new_items[0] if new_items else "")
+        
+        if selected_category == "Custom":
+            self.custom_color_entry.config(state="normal")
+        else:
+            self.custom_color_entry.config(state="disabled")
         
     def MakeExportSettingsFrame(self, frame):
         '''Frame for Exporting Plots'''
