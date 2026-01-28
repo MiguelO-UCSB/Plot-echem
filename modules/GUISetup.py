@@ -25,7 +25,7 @@ Current_Units = ['A', 'mA', '\u03BCA', 'nA', 'pA', 'fA']
 
 Potential_Units = ['kV', 'V', 'mV', '\u03BCV']
 
-Reference_ = ['SCE', 'Ag/AgCl', 'RHE', 'SHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A']
+Reference_ = ['SCE', 'Ag/AgCl', 'RHE', 'SHE', 'Ag wire', 'PdH\u2082', 'Fc/Fc\u207A', 'Custom']
 
 Export_format_types = ['png', 'pdf', 'svg', 'jpg']
 
@@ -383,7 +383,23 @@ class GUISetupMethods():
         self.TimeUnits_ = OptionMenuStringVar(NormFrame, Time_Units, 3, 1, (W), idx=2)
         
         Label(NormFrame, text='Reference Type: ').grid(row=4, column=0, sticky=(E))
-        self.Reference_update = OptionMenuStringVar(NormFrame, Reference_, 4, 1, (W))
+        self.reference_var = StringVar(NormFrame)
+        self.Reference_update = OptionMenu(NormFrame, self.reference_var,
+                                        Reference_[0],
+                                        *Reference_,
+                                        command=self.update_ref)
+        self.Reference_update.grid(row=4, column=1, sticky=(W))
+        
+        self.custom_ref_var = StringVar()
+        
+        self.custom_ref_var = Entry(
+            NormFrame,
+            textvariable=self.custom_ref_var,
+            width=10
+        )
+        self.custom_ref_var.grid(row=4, column=2, sticky=(W))
+        
+        self.update_ref(self.reference_var.get())
         
         Label(NormFrame, text='Potential Units: ').grid(row=5, column=0, sticky=(E))
         self.PotentialUnits_ = OptionMenuStringVar(NormFrame, Potential_Units, 5, 1, (W), idx=1)
@@ -838,7 +854,13 @@ class GUISetupMethods():
             self.custom_color_entry.config(state="normal")
         else:
             self.custom_color_entry.config(state="disabled")
-        
+    
+    def update_ref(self, selected_category):
+        if selected_category == "Custom":
+            self.custom_ref_var.config(state="normal")
+        else:
+            self.custom_ref_var.config(state="disabled")
+            
     def MakeExportSettingsFrame(self, frame):
         '''Frame for Exporting Plots'''
         #Trans - True/False

@@ -9,6 +9,7 @@ from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 import os
+import codecs
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
@@ -295,7 +296,7 @@ class EchemFig():
         
         # Unit and axis labels
         time_unit_val = self.GUI.TimeUnits_.get()
-        ref_val = self.GUI.Reference_update.get()
+        ref_val = self.GUI.reference_var.get()
         ref_unit_val = self.GUI.PotentialUnits_.get()
         current_unit_val = self.GUI.CurrentUnits_.get()
         IV_unit_params = [time_unit_val, ref_val, ref_unit_val, current_unit_val]
@@ -343,7 +344,7 @@ class EchemFig():
             selected_files = list(range(self.file_max))
         
         if self.file_num in selected_files:
-            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS)
+            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors, selected_files)
         
         if Overlay:
             selected_indices = selected_files
@@ -487,9 +488,9 @@ class EchemFig():
             else:
                 # Each cycle gets its own label
                 label = legend_labels[color_idx]
-                
-            self.ln, = self.ax.plot(xvals + x_shifts[count],
-                         yvals[:len(xvals)] + y_shifts[count],
+            # print(color_idx)
+            self.ln, = self.ax.plot(xvals + x_shifts[color_idx],
+                         yvals[:len(xvals)] + y_shifts[color_idx],
                          color=colors[color_idx],
                          marker = marker_styles[color_idx],
                          markersize = marker_sizes[color_idx],
@@ -500,13 +501,13 @@ class EchemFig():
             analyze_peak = self.GUI.AnalyzePeak_.get()
             if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Reversible':
                 self.Peak_analysis.rev_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
-                                               xvals + x_shifts[count],
-                                               yvals[:len(xvals)] + y_shifts[count])
+                                               xvals + x_shifts[color_idx],
+                                               yvals[:len(xvals)] + y_shifts[color_idx])
             
             if ylabel == 'I' and xlabel == 'V' and analyze_peak == 'Peak Finder':
                 self.Peak_analysis.irr_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
-                                               xvals + x_shifts[count],
-                                               yvals[:len(xvals)] + y_shifts[count])
+                                               xvals + x_shifts[color_idx],
+                                               yvals[:len(xvals)] + y_shifts[color_idx])
                 
             add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
             if add_inset == True:
@@ -532,8 +533,8 @@ class EchemFig():
                     ylim = (0, 1)
                     
                 axins = inset_axes(self.ax, width=f"{width}%", height=f"{height}%", loc=location,)
-                axins.plot(xvals + x_shifts[count],
-                             yvals[:len(xvals)] + y_shifts[count],
+                axins.plot(xvals + x_shifts[color_idx],
+                             yvals[:len(xvals)] + y_shifts[color_idx],
                              color=colors[color_idx],
                              marker = marker_styles[color_idx],
                              markersize = marker_sizes[color_idx],
@@ -613,6 +614,9 @@ class EchemFig():
             area_units = self.GUI.curr_den_units.get()
             axis_labels['I'] = f'J ({self.current_units}/{area_units})'
         
+        if ref_label == 'Custom':
+            axis_labels['V'] = f'{self.GUI.custom_ref_var.get()} ({self.ref_units})'
+            
         box_asp = self.GUI.box_aspect.get()
         if box_asp != '':
             try:
@@ -759,7 +763,21 @@ class EchemFig():
             self.cbar.ax.yaxis.set_ticks_position('left')
             self.cbar.ax.yaxis.set_label_position('left')
     
-    def set_IV_cycles_to_plot_and_shifts(self, n_colors):
+    def set_IV_cycles_to_plot_and_shifts(self, n_colors, selected_indices):
+        """
+        Process manual or user input cycles to plot.
+        Create shifts based on user input, automatically filling
+        missing positions with numeric placeholders. Works with selective
+        file/cycle plotting.
+    
+        Parameters
+        ----------
+        n_colors : int
+            Total number of color slots (files or cycles)
+        selected_indices : list[int] or None
+            Indices of files/cycles being plotted (0-based)
+        """
+        
         # --- Get cycles to plot from GUI or manual from Console ---
         manual = bool_map.get(self.GUI.cycles_to_plot_manual.get().strip().lower(), False)
         
@@ -771,30 +789,62 @@ class EchemFig():
             print(f'Plotting cycles {cycles_strs} for file {self.file_num+1}')
         
         cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
-            
+        
         # --- Get x shifts from GUI ---
         x_shifts_strs = self.GUI.x_axis_shifts.get().split(',')
-        x_shifts = [float(lbl.strip()) for lbl in x_shifts_strs if lbl.strip() != '']
+        user_x_shifts = [float(lbl.strip()) for lbl in x_shifts_strs if lbl.strip() != '']
         
-        if len(x_shifts)==0:
+        # Start with default numeric shifts
+        x_shifts = [0 for i in range(n_colors)]
+        
+        if len(user_x_shifts) == 0:
+            # No user shifts given → just use numbers
             x_shifts = [0 for _ in range(n_colors)]
+            # print(x_shifts)
+        else:
+            # --- Match user labels to selected indices ---
+            if len(user_x_shifts) > len(selected_indices):
+                # Too many labels, ignore extras
+                user_x_shifts = user_x_shifts[:len(selected_indices)]
+            elif len(user_x_shifts) < len(selected_indices):
+                # Too few labels, fill the remaining with numbers
+                # e.g. user_x_shifts = ['A', 'B'], selected_indices=[0,2,4]
+                fill_count = len(selected_indices) - len(user_x_shifts)
+                user_x_shifts += [0 for i in range(len(user_x_shifts), len(user_x_shifts) + fill_count)]
             
-        # If labels provided, must match number of colors
-        if len(x_shifts)>0 and len(x_shifts) != n_colors:
-            print("Warning: Number of x shifts does not match number of colors.\nShifts are separated by commas\nIgnoring shifts...")
-            x_shifts = [0 for _ in range(n_colors)]
+            # Map labels to the correct selected indices
+            for idx, user_x_shifts in zip(selected_indices, user_x_shifts):
+                if 0 <= idx < n_colors:
+                    x_shifts[idx] = user_x_shifts
+                    
+        print(x_shifts)
             
         # --- Get y shifts from GUI ---
         y_shifts_strs = self.GUI.y_axis_shifts.get().split(',')
-        y_shifts = [float(lbl.strip()) for lbl in y_shifts_strs if lbl.strip() != '']
+        user_y_shifts = [float(lbl.strip()) for lbl in y_shifts_strs if lbl.strip() != '']
         
-        if len(y_shifts)==0:
+        # Start with default numeric shifts
+        y_shifts = [int(i + 1) for i in range(n_colors)]
+        
+        if len(user_y_shifts) == 0:
+            # No user shifts given → just use numbers
             y_shifts = [0 for _ in range(n_colors)]
+        
+        else:
+            # --- Match user labels to selected indices ---
+            if len(user_y_shifts) > len(selected_indices):
+                # Too many labels, ignore extras
+                user_y_shifts = user_y_shifts[:len(selected_indices)]
+            elif len(user_y_shifts) < len(selected_indices):
+                # Too few labels, fill the remaining with numbers
+                # e.g. user_y_shifts = ['A', 'B'], selected_indices=[0,2,4]
+                fill_count = len(selected_indices) - len(user_y_shifts)
+                user_y_shifts += [int(i + 1) for i in range(len(user_y_shifts), len(user_y_shifts) + fill_count)]
             
-        # If labels provided, must match number of colors
-        if len(y_shifts)>0 and len(y_shifts) != n_colors:
-            print("Warning: Number of y shifts does not match number of colors.\nShifts are separated by commas\nIgnoring shifts...")
-            y_shifts = [0 for _ in range(n_colors)]
+            # Map labels to the correct selected indices
+            for idx, user_y_shifts in zip(selected_indices, user_y_shifts):
+                if 0 <= idx < n_colors:
+                    y_shifts[idx] = user_y_shifts
         
         return x_shifts, y_shifts, cycles_to_plot
     
@@ -1025,8 +1075,9 @@ class EchemFig():
             Indices of files/cycles being plotted (0-based)
         """
         # --- Get labels from GUI ---
-        label_strs = self.GUI.labels_for_legend.get().split(',')
-        user_labels = [lbl.strip() for lbl in label_strs if lbl.strip() != '']
+        label_strs = self.GUI.labels_for_legend.get()
+        decoded = self.interpret_user_string(label_strs).split(',')
+        user_labels = [lbl.strip() for lbl in decoded if lbl.strip() != '']
         
         # Start with default numeric labels
         legend_labels = [str(i + 1) for i in range(n_colors)]
@@ -1052,6 +1103,12 @@ class EchemFig():
                 legend_labels[idx] = user_label
         
         return legend_labels
+    
+    def interpret_user_string(self, s):
+        try:
+            return codecs.decode(s, "unicode_escape")
+        except Exception:
+            return s
     
     def add_legend_to_plot(self):
         location = self.GUI.location_for_legend.get()

@@ -208,7 +208,7 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         
         # Norm traces
         self.CurrentUnits_.trace('w', self.fig_opt_changed)
-        self.Reference_update.trace('w', self.fig_opt_changed)
+        self.reference_var.trace('w', self.fig_opt_changed)
         self.PotentialUnits_.trace('w', self.fig_opt_changed)
         self.TimeUnits_.trace('w', self.fig_opt_changed)
         self.Colorbar_.trace('w', self.fig_opt_changed)
