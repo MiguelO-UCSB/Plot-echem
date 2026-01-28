@@ -816,8 +816,6 @@ class EchemFig():
             for idx, user_x_shifts in zip(selected_indices, user_x_shifts):
                 if 0 <= idx < n_colors:
                     x_shifts[idx] = user_x_shifts
-                    
-        print(x_shifts)
             
         # --- Get y shifts from GUI ---
         y_shifts_strs = self.GUI.y_axis_shifts.get().split(',')
