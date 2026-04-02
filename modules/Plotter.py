@@ -5,7 +5,7 @@ import ast
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Polygon
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 import os
@@ -107,8 +107,9 @@ class EchemFig():
         self.ln, = self.ax.plot([0,1],[0,1])
         # self.load_style_file("Z:\Projects\Miguel\Spyder\style.mplstyle")
         
-        # Load reference to Peak analysis object
+        # Load reference to analysis objects
         self.Peak_analysis = Peak_analysis(self.ax, self.GUI)
+        self.Integration_analysis = Integration_analysis(self.ax, self.GUI)
         
         # Keep track of what is currently being plotted
         self.DataPoint = None
@@ -344,8 +345,8 @@ class EchemFig():
             selected_files = list(range(self.file_max))
         
         if self.file_num in selected_files:
-            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors, selected_files)
-        
+            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS, selected_files)
+
         if Overlay:
             selected_indices = selected_files
         else:
@@ -508,6 +509,10 @@ class EchemFig():
                 self.Peak_analysis.irr_peak_finder(d['t'][count][:len(xvals)]/time_unit_conv[self.time_units],
                                                xvals + x_shifts[color_idx],
                                                yvals[:len(xvals)] + y_shifts[color_idx])
+            
+            integrate = bool_map.get(self.GUI.apply_integration.get().strip().lower(), False)
+            if integrate == True:
+                self.Integration_analysis.integrate_(xvals + x_shifts[color_idx], yvals[:len(xvals)] + y_shifts[color_idx])
                 
             add_inset = bool_map.get(self.GUI.Inset_.get().strip().lower(), False)
             if add_inset == True:
@@ -2086,8 +2091,50 @@ class Peak_analysis():
                 self.ax.plot(V[idx], I[idx], 'o', color=peak_color)
                 print(f'( {V[idx]:.3f} {self.ref_units}, {I[idx]:.3f} {self.current_units} )')
             
+class Integration_analysis():
+    def __init__(self, ax, GUI):
+        self.ax = ax
+        self.GUI = GUI
+        
+    def integrate_(self, x, y):
+        try:
+            left_target = float(self.GUI.left_target.get())
+            left_bound = min(range(len(x)), key=lambda i: abs(x[i] - left_target))
+            # print(v[left_bound])
             
+            right_target = float(self.GUI.right_target.get())
+            right_bound = min(range(len(x)), key=lambda i: abs(x[i] - right_target))
+            # print(v[right_bound])
             
+            integral = np.trapz(y[left_bound:right_bound]-y[left_bound], x[left_bound:right_bound])
+            print(f'Integral: {integral}')
+            
+            marker_style = self.GUI.marker_style_int.get()
+            peak_color = self.GUI.int_color.get()
+            alpha = float(self.GUI.int_alpha.get())
+            face_color = self.GUI.int_area_color.get()
+            if not is_color_like(peak_color):
+                peak_color = 'red'
+                print('Invalid marker color. Setting default = "red"')
+            if not is_color_like(face_color):
+                face_color = 'black'
+                print('Invalid face color. Setting default = "black"')
+                
+            self.ax.plot(x[left_bound], y[left_bound],
+                         marker=marker_style, color=peak_color)
+            self.ax.plot(x[right_bound], y[right_bound],
+                         marker=marker_style, color=peak_color)
+            
+            verts = [(x[left_bound], y[left_bound]),
+                      *zip(x[left_bound:right_bound +1],
+                           y[left_bound:right_bound +1]),
+                      (x[right_bound], y[left_bound])]
+            polygon = Polygon(verts, closed=True, facecolor=face_color, edgecolor='k', alpha=alpha)
+    
+            # 4. Add the polygon to the axes
+            self.ax.add_patch(polygon)
+        except Exception as e:
+            print(f'Error with Integration analysis: {e}')
             
             
             

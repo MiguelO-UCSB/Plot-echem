@@ -830,11 +830,37 @@ class GUISetupMethods():
         Label(PeakFrame, text='Baseline Color: ').grid(row=9, column=2, sticky=(E))
         self.baseline_analysis_color = EntryStringVar(PeakFrame, 10, 9, 3, (W), tab=True,
                                                   bind_key='<Return>', default='green')
-        Label(PeakFrame, text='Line width: ').grid(row=10, column=0, sticky=(E))
+        Label(PeakFrame, text='Line Width: ').grid(row=10, column=0, sticky=(E))
         self.baseline_analysis_line_width = EntryStringVar(PeakFrame, 10, 10, 1, (W), tab=True,
                                                   bind_key='<Return>', default='1')
         Label(PeakFrame, text='Line Style: ').grid(row=10, column=2, sticky=(E))
         self.baseline_analysis_line_style = OptionMenuStringVar(PeakFrame, linestyle_str, 10, 3, (W,E), idx=3,)
+        
+        # ---- Integration Analysis Frame
+        IntFrame = Frame(frame)
+        IntFrame.grid(row=2, column=0, sticky=(N,S,E,W), pady=10)
+        
+        Label(IntFrame, text='  Apply Integration: ').grid(row=0, column=0, sticky=(E))
+        self.apply_integration = OptionMenuStringVar(IntFrame, Overlay_options, 0, 1, (W,E), idx=1,)
+        Label(IntFrame, text='Left Bound: ').grid(row=1, column=0, sticky=(E))
+        self.left_target = EntryStringVar(IntFrame, 10, 1, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='0')
+        Label(IntFrame, text='Right Bound: ').grid(row=1, column=2, sticky=(E))
+        self.right_target = EntryStringVar(IntFrame, 10, 1, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='1')
+        Label(IntFrame, text='Marker Style: ').grid(row=2, column=0, sticky=(E))
+        self.marker_style_int = OptionMenuStringVar(IntFrame, marker_str, 2, 1, (W,E), idx=1,)
+        Label(IntFrame, text='Marker Color: ').grid(row=2, column=2, sticky=(E))
+        self.int_color = EntryStringVar(IntFrame, 10, 2, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='red')
+        Label(IntFrame, text='Area Alpha: ').grid(row=3, column=0, sticky=(E))
+        self.int_alpha = EntryStringVar(IntFrame, 10, 3, 1, (W), tab=True,
+                                                  bind_key='<Return>', default='0.5')
+        Label(IntFrame, text='Area Color: ').grid(row=3, column=2, sticky=(E))
+        self.int_area_color = EntryStringVar(IntFrame, 10, 3, 3, (W), tab=True,
+                                                  bind_key='<Return>', default='black')
+        
+        
     
     def update_items(self, selected_category):
         # Clear existing options in the item menu

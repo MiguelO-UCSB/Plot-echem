@@ -414,7 +414,7 @@ class Make_Popup_GUI():
             "Milli (m)": 1e-3,
             "Micro (µ)": 1e-6,
             "Nano (n)": 1e-9,
-            "Pico (d)": 1e-12,
+            "Pico (p)": 1e-12,
             "Femto (f)": 1e-15,
             # "Atto (a)": 1e-18,
             # "Zepto (z)": 1e-21,
