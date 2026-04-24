@@ -501,7 +501,8 @@ class extract:
         scan_rate = float([line for line in lines if "Scan Rate" in line][0].split("=")[1])
         sample_interval = float([line for line in lines if "Sample Interval" in line][0].split("=")[1])
         
-        skip = [n for n, line in enumerate(lines) if "Potential/V" in line and "Current/A" in line[0] + 1]
+        skip = [n for n, line in enumerate(lines)
+        if "Potential/V" in line and "Current/A" in line][0] + 1
         
         df = pd.read_csv(
             file,
