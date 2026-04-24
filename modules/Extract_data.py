@@ -2,6 +2,7 @@ import numpy as np
 from io import StringIO
 import scipy.io
 import os
+import traceback
 import pandas as pd
 
 '''
@@ -83,29 +84,48 @@ class extract_data():
                     if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
-                
-                def is_CHI_file(file):
-                    with open(file, "r", encoding="latin1") as f:
-                        txt_header = f.read(5000)
-                
-                    return "Potential/V, Current/A" in txt_header
-                if is_CHI_file(file):
-                    Ts, Vs, Is, sweeps = extract.CHIPot_data_norm(file)
-                    print(f'\nPloting CHI .txt file: {file.rsplit("/", 1)[-1]}')
             
-                    NUM_SWEEPS = int(sweeps[-1])
-                    if NUM_SWEEPS == 0:
-                        NUM_SWEEPS = 1
+            # Extracting from CHI File
+            files = file if isinstance(file, (list, tuple)) else [file]
+    
+            for file in files:
+                try:
+                    print("\nChecking file:", file)
+                    print("Exists:", os.path.exists(file))
+                    print("Ends with txt:", file.endswith(".txt"))
             
-                    print(f'Number of cycles: {NUM_SWEEPS}')
+                    if file.endswith(".txt"):
             
-                else:
-                    get_col = list(pd.read_csv(file, sep='\t', nrows=1).columns)
+                        with open(file, "r", encoding="latin1") as f:
+                            is_chi = any("Potential/V" in line and "Current/A" in line for line in f)
             
-                    if len(get_col) == 1:
-                        get_col = list(pd.read_csv(file, sep=';', nrows=1).columns)
+                        print("Is CHI:", is_chi)
+            
+                        if is_chi:
+                            Ts, Vs, Is, sweeps = extract.CHIPot_data_norm(file)
+                            print(f'\nPloting CHI .txt file: {file.rsplit("/", 1)[-1]}')
+            
+                            NUM_SWEEPS = int(sweeps[-1])
+                            if NUM_SWEEPS == 0:
+                                NUM_SWEEPS = 1
+            
+                            print(f"Number of cycles: {NUM_SWEEPS}")
+            
+                        else:
+                            get_col = list(pd.read_csv(file, sep="\t", nrows=1).columns)
+            
+                            if len(get_col) == 1:
+                                get_col = list(pd.read_csv(file, sep=";", nrows=1).columns)
+            
+                            print("Detected columns:", get_col)
+            
+                            # your existing Autolab/BioLogic checks go here
+            
+                except Exception:
+                    print("ERROR loading file:")
+                    print(file)
+                    traceback.print_exc()
 
-        # rest of your Autolab/BioLogic checks  
             
             if file.endswith('.mat'):
                 while True:
@@ -335,6 +355,7 @@ class extract_data():
             file_max = bio_file_max + seccm_file_max + heka_file_max
             
             return extracted_data, file_max
+
     
 class extract:
     # ---- Biologic
@@ -498,7 +519,8 @@ class extract:
         
         sweeps = np.ones(len(v)) # CHI file does not include cycle number column
         
-        return t, v, i, sweeps   
+        return t, v, i, sweeps  
+    
     
     def matlab_iv_data(file, plot, extract_groups):
         '''
