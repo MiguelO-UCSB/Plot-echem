@@ -83,6 +83,29 @@ class extract_data():
                     if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
+                
+                def is_CHI_file(file):
+                    with open(file, "r", encoding="latin1") as f:
+                        txt_header = f.read(5000)
+                
+                    return "Potential/V, Current/A" in txt_header
+                if is_CHI_file(file):
+                    Ts, Vs, Is, sweeps = extract.CHIPot_data_norm(file)
+                    print(f'\nPloting CHI .txt file: {file.rsplit("/", 1)[-1]}')
+            
+                    NUM_SWEEPS = int(sweeps[-1])
+                    if NUM_SWEEPS == 0:
+                        NUM_SWEEPS = 1
+            
+                    print(f'Number of cycles: {NUM_SWEEPS}')
+            
+                else:
+                    get_col = list(pd.read_csv(file, sep='\t', nrows=1).columns)
+            
+                    if len(get_col) == 1:
+                        get_col = list(pd.read_csv(file, sep=';', nrows=1).columns)
+
+        # rest of your Autolab/BioLogic checks  
             
             if file.endswith('.mat'):
                 while True:
@@ -449,6 +472,33 @@ class extract:
             _, t, i, _, v = array
         
         return t, v, i, sweeps
+    
+    def CHIPot_data_norm(file):
+        with open(file, "r", encoding="latin1") as f:
+            lines = f.readlines()
+        
+        scan_rate = float([line for line in lines if "Scan Rate" in line][0].split("=")[1])
+        sample_interval = float([line for line in lines if "Sample Interval" in line][0].split("=")[1])
+        
+        skip = [n for n, line in enumerate(lines) if "Potential/V" in line and "Current/A" in line[0] + 1]
+        
+        df = pd.read_csv(
+            file,
+            names=("v", "i"),
+            skiprows=skip,
+            sep=",",
+            encoding="latin1"
+        )
+        df = df.dropna()
+        
+        v = np.array(df["v"])
+        i = np.array(df["i"])   # CHI current is in A
+        
+        t = np.arange(len(v)) * sample_interval / scan_rate
+        
+        sweeps = np.ones(len(v)) # CHI file does not include cycle number column
+        
+        return t, v, i, sweeps   
     
     def matlab_iv_data(file, plot, extract_groups):
         '''
