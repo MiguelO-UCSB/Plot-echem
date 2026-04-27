@@ -24,7 +24,7 @@ Supported files:
    Biologic .txt
       
       Tab separated
-      (time/s Ewe/V <I>/mA cycle number) or (time/s Ewe/V <I>/mA)
+      (time/s Ewe/V <I>/mA cycle number) or (time/s Ewe/V <I>/mA cycle number ns) or (time/s Ewe/V <I>/mA)
       (time/s Ewe/V)
       (freq/Hz Re(Z)/Ohm -Im(Z)/Ohm |Z|/Ohm Phase(Z)/deg cycle number) or (freq/Hz Re(Z)/Ohm -Im(Z)/Ohm |Z|/Ohm Phase(Z)/deg)
    
@@ -44,3 +44,8 @@ Supported files:
 
       Comma separated
       ("Index", "Time[s]", "Imon-1[A]", "Time[s]", "Vmon-1[V]")
+
+   CHI .txt
+
+      Comma separated
+      (Potential/V, Current/A)
