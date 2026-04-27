@@ -2,6 +2,7 @@ import numpy as np
 from io import StringIO
 import scipy.io
 import os
+import traceback
 import pandas as pd
 
 '''
@@ -83,7 +84,26 @@ class extract_data():
                     if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
-            
+                
+                try:
+                    with open(file, "r", encoding="latin1") as f:
+                                is_chi = any("Potential/V" in line and "Current/A" in line for line in f)
+                    
+                    if is_chi:
+                        Ts, Vs, Is, sweeps = extract.CHIPot_data_norm(file)
+                        print(f'\nPloting CHI .txt file: {file.rsplit("/", 1)[-1]}')
+    
+                        NUM_SWEEPS = int(sweeps[-1])
+                        if NUM_SWEEPS == 0:
+                            NUM_SWEEPS = 1
+    
+                        print(f"Number of cycles: {NUM_SWEEPS}")
+                
+                except Exception:
+                    print("ERROR loading file:")
+                    print(file)
+                    traceback.print_exc()
+                
             if file.endswith('.mat'):
                 while True:
                     try:
@@ -262,6 +282,7 @@ class extract_data():
                             input_ = self.GUI.console_input('Input groups to plot with spaces in between (Example:1 2 3 4) or type "all" for all groups\n>>\n')
                             if input_ == 'all':
                                 groups = extract.matlab_iv_data(f, 1, True)
+                                # print(groups)
                                 print(f'Extracting all groups of length {groups}')
                                 series_to_plot = list(range(1, groups))
                                 # print(len(series_to_plot))
@@ -488,13 +509,14 @@ class extract:
         traces = traces[np.where(traces == 1)]
         
         if extract_groups == True:
-            return len(groups)
+            return len(series)
         
         if plot > len(groups):
             # print(len(groups))
             print(f'Warning: Cycle input out of bounds for data with length {len(groups)}')
             return None
         
+        # print(series)
         data = dict()
         count = 0
         # print(groups, series, sweeps, traces)
@@ -575,7 +597,34 @@ class extract:
             print('Partial data extracted (End {variable} at {END_BEFORE})')
         
         return t_return, v_return, i_return, len(data[plot])
+    
+    def CHIPot_data_norm(file):
+        with open(file, "r", encoding="latin1") as f:
+            lines = f.readlines()
 
+        scan_rate = float([line for line in lines if "Scan Rate" in line][0].split("=")[1])
+        sample_interval = float([line for line in lines if "Sample Interval" in line][0].split("=")[1])
+
+        skip = [n for n, line in enumerate(lines)
+        if "Potential/V" in line and "Current/A" in line][0] + 1
+
+        df = pd.read_csv(
+            file,
+            names=("v", "i"),
+            skiprows=skip,
+            sep=",",
+            encoding="latin1"
+        )
+        df = df.dropna()
+
+        v = np.array(df["v"])
+        i = np.array(df["i"])   # CHI current is in A
+
+        t = np.arange(len(v)) * sample_interval / scan_rate
+
+        sweeps = np.ones(len(v)) # CHI file does not include cycle number column
+
+        return t, v, i, sweeps  
     
 if __name__ == '__main__':
     class DummyGUI:
@@ -585,6 +634,7 @@ if __name__ == '__main__':
             return input()  # or return a default value for testing
     
     folder = r'Z:\Projects\Miguel\Raw data\2025\test\Biologic EIS test'
+    folder = r'Z:\Projects\Miguel\Raw data\2026\4-13-26\Pt micro FFTEIS'
     Multi_files = True
 
     extractor = extract_data()

@@ -345,7 +345,7 @@ class EchemFig():
             selected_files = list(range(self.file_max))
         
         if self.file_num in selected_files:
-            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(self.NUM_SWEEPS, selected_files)
+            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors, selected_files)
 
         if Overlay:
             selected_indices = selected_files
