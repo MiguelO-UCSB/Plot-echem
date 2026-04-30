@@ -147,11 +147,43 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         main_pane = PanedWindow(root, orient="horizontal")
         main_pane.grid(row=0, column=0, sticky="nsew")
         
-        # ---- LEFT PANEL
-        leftpanel  = Frame(main_pane)
-        leftpanel.rowconfigure(0, weight=1)
-        leftpanel.columnconfigure(0, weight=1)
+        # ---- LEFT PANEL (Now Scrollable)
         
+        # 1. Create a container frame to hold both the Canvas and the Scrollbar
+        left_container = Frame(main_pane)
+        left_container.rowconfigure(0, weight=1)
+        left_container.columnconfigure(0, weight=1)
+        
+        # 2. Create the Canvas and the Scrollbar
+        left_canvas = Canvas(left_container)
+        left_canvas.grid(row=0, column=0, sticky="nsew")
+        
+        left_scrollbar = Scrollbar(left_container, orient="vertical", command=left_canvas.yview)
+        left_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        left_canvas.configure(yscrollcommand=left_scrollbar.set)
+        
+        # 3. Create your original leftpanel INSIDE the canvas
+        leftpanel = Frame(left_canvas)
+        
+        # 4. Add the leftpanel to a "window" inside the canvas
+        # We save the frame_id so we can force it to match the canvas width later
+        frame_id = left_canvas.create_window((0, 0), window=leftpanel, anchor="nw")
+        
+        # 5. Bind events to update scrolling and width dynamically
+        # Update the scroll region whenever the leftpanel changes size
+        leftpanel.bind(
+            "<Configure>",
+            lambda e: left_canvas.configure(scrollregion=left_canvas.bbox("all"))
+        )
+        
+        # Force the leftpanel to stretch to the width of the canvas so it doesn't collapse
+        left_canvas.bind(
+            "<Configure>",
+            lambda e: left_canvas.itemconfig(frame_id, width=max(e.width, 1000))
+        )
+        
+        # --- Your original sub-frames (unchanged, just nested in the new leftpanel) ---
         UpdateButtonFrame = Frame(leftpanel)
         PlotParamsFrame = Frame(leftpanel)
         ResizeFrame = Frame(leftpanel)
@@ -162,7 +194,8 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         ResizeFrame.grid(row=2, column=0, sticky=(N,S,E,W))
         PlotTypeFrame.grid(row=3, column=0, sticky=(N,S,E,W))
         
-        main_pane.add(leftpanel)   # adjustable width
+        # Add the CONTAINER to the paned window, not the inner panel
+        main_pane.add(left_container)   
         
         # ---- RIGHT PANEL
         rightpanel = Frame(main_pane)
@@ -170,7 +203,6 @@ class GUI(GUISetupMethods, EchemFig, extract_data):
         rightpanel.columnconfigure(0, weight=1)
         
         EchemFrame   = Frame(rightpanel)
-        
         EchemFrame.grid(row=0, column=0, sticky=(N,S,E,W))
         
         main_pane.add(rightpanel)
