@@ -330,10 +330,20 @@ class EchemFig():
         ylabel, xlabel = IV_selection.split(' vs ')
     
         # Decide how many colors are needed
+        
+        # When opening multiple files
         if self.file_max > 1 and Overlay == False and self.NUM_SWEEPS > 1:
             n_colors = self.NUM_SWEEPS
+        
+        # When opening one file
+        elif self.file_max == 1:
+            n_colors = self.NUM_SWEEPS
+        
+        elif self.file_max > 1 and Overlay == True:
+            n_colors = self.file_max
+            
         else:
-            n_colors = self.file_max if self.file_max > 1 else self.NUM_SWEEPS
+            n_colors = self.NUM_SWEEPS
         
         sm, colors, cmap = self.set_colormap_for_plot(n_colors)
         
@@ -345,7 +355,7 @@ class EchemFig():
             selected_files = list(range(self.file_max))
         
         if self.file_num in selected_files:
-            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors, selected_files)
+            x_shifts, y_shifts, cycles_to_plot = self.set_IV_cycles_to_plot_and_shifts(n_colors, selected_files, self.NUM_SWEEPS)
 
         if Overlay:
             selected_indices = selected_files
@@ -360,7 +370,9 @@ class EchemFig():
         if Apply_current_density == True:
             if file_num in selected_files:
                 area = self.set_area_for_current_density()
-                        
+        
+        labeled_colors = set()
+        
         for count in range(self.NUM_SWEEPS):
             if file_num not in selected_files:
                 continue
@@ -476,7 +488,6 @@ class EchemFig():
             if skip_sweep:
                 continue
             
-            labeled_colors = set()
             # --- Determine label for this plotted line ---
             if Overlay:
                 # Only label the first time each color is used
@@ -768,7 +779,7 @@ class EchemFig():
             self.cbar.ax.yaxis.set_ticks_position('left')
             self.cbar.ax.yaxis.set_label_position('left')
     
-    def set_IV_cycles_to_plot_and_shifts(self, n_colors, selected_indices):
+    def set_IV_cycles_to_plot_and_shifts(self, n_colors, selected_indices, num_sweeps):
         """
         Process manual or user input cycles to plot.
         Create shifts based on user input, automatically filling
@@ -781,6 +792,8 @@ class EchemFig():
             Total number of color slots (files or cycles)
         selected_indices : list[int] or None
             Indices of files/cycles being plotted (0-based)
+        num_sweeps : int
+            Total number of sweeps/cycles available to bound the parsing
         """
         
         # --- Get cycles to plot from GUI or manual from Console ---
@@ -793,7 +806,7 @@ class EchemFig():
             cycles_strs = self.GUI.console_input(f'Input cycles to plot for file {self.file_num+1} (comma separated)>>\n')
             print(f'Plotting cycles {cycles_strs} for file {self.file_num+1}')
         
-        cycles_to_plot = self.parse_selection(cycles_strs, n_colors)
+        cycles_to_plot = self.parse_selection(cycles_strs, num_sweeps)
         
         # --- Get x shifts from GUI ---
         x_shifts_strs = self.GUI.x_axis_shifts.get().split(',')
