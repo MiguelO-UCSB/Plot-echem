@@ -24,9 +24,9 @@ class extract_data():
             Ts = None
             freq = None
             if file.endswith('.txt'):
-                get_col = list(pd.read_csv(file, sep='\t', nrows=1, encoding_errors='ignore').columns)
+                get_col = list(pd.read_csv(file, sep='\t', nrows=1 ).columns)
                 if len(get_col) == 1:
-                    get_col = list(pd.read_csv(file, sep=';', nrows=1, encoding_errors='ignore').columns)
+                    get_col = list(pd.read_csv(file, sep=';', nrows=1 ).columns)
                 # print(get_col)
                 
                 if get_col[0] == 'Index':
@@ -200,9 +200,9 @@ class extract_data():
                 Ts = None
                 freq = None
                 ## Column names for data frame to distinguish exported .txt file
-                get_col = list(pd.read_csv(f, sep='\t', nrows=1, encoding_errors='ignore').columns)
+                get_col = list(pd.read_csv(f, sep='\t', nrows=1 ).columns)
                 if len(get_col) == 1:
-                    get_col = list(pd.read_csv(f, sep=';', nrows=1, encoding_errors='ignore').columns)
+                    get_col = list(pd.read_csv(f, sep=';', nrows=1 ).columns)
                 # print(get_col)
                 
                 if get_col[0] == 'Index':
@@ -265,29 +265,29 @@ class extract_data():
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
                     
-                try:
-                    with open(f, "r", encoding="utf-8-sig") as file_obj:
-                        is_otherpot = any(
-                            line.startswith("Index,")
-                            and "Potential (V)" in line
-                            and "Current" in line
-                            for line in file_obj
-                        )
+                # try:
+                #     with open(f, "r", encoding="utf-8-sig") as file_obj:
+                #         is_otherpot = any(
+                #             line.startswith("Index,")
+                #             and "Potential (V)" in line
+                #             and "Current" in line
+                #             for line in file_obj
+                #         )
                 
-                    if is_otherpot:
-                        Ts, Vs, Is, sweeps = extract.otherpot_data_norm(f)
-                        print(f'\nPloting Other potentiostat .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
+                #     if is_otherpot:
+                #         Ts, Vs, Is, sweeps = extract.otherpot_data_norm(f)
+                #         print(f'\nPloting Other potentiostat .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                 
-                        NUM_SWEEPS = int(sweeps[-1])
-                        if NUM_SWEEPS == 0:
-                            NUM_SWEEPS = 1
+                #         NUM_SWEEPS = int(sweeps[-1])
+                #         if NUM_SWEEPS == 0:
+                #             NUM_SWEEPS = 1
                 
-                        print(f"Number of cycles: {NUM_SWEEPS}")
+                #         print(f"Number of cycles: {NUM_SWEEPS}")
                 
-                except Exception:
-                    print("ERROR loading Other potentiostat file:")
-                    print(f)
-                    traceback.print_exc()
+                # except Exception:
+                #     print("ERROR loading Other potentiostat file:")
+                #     print(f)
+                #     traceback.print_exc()
                     
                 if Ts is not None:
                     ##Split file by number of sweeps
@@ -391,7 +391,7 @@ class extract_data():
 class extract:
     # ---- Biologic
     def bio_data_OVP(file):
-        df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -400,7 +400,7 @@ class extract:
         return t, v, i
     
     def bio_data_PEIS(file):
-        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t' )
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -411,7 +411,7 @@ class extract:
         return freq, real_Z, imag_Z, abs_Z, phase
     
     def bio_data_PEIS_cycles(file):
-        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 'nc'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 'nc'), skiprows=1, sep='\t' )
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -423,7 +423,7 @@ class extract:
         return freq, real_Z, imag_Z, abs_Z, phase, sweeps
     
     def bio_data_no_cycle(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -432,7 +432,7 @@ class extract:
         return t, v, i
     
     def bio_data_norm(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -442,7 +442,7 @@ class extract:
         return t, v, i, sweeps
     
     def bio_data_5norm(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number', 'ns'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number', 'ns'), skiprows=1, sep='\t' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -452,7 +452,7 @@ class extract:
         return t, v, i, sweeps
     
     def bio_data_DPV(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -462,7 +462,7 @@ class extract:
     
     # ---- AutoLab
     def autolab_data_norm(file):
-        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';', encoding_errors='ignore')
+        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';' )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -473,10 +473,10 @@ class extract:
     
     def autolab_data_PEIS(file, type_):
         if type_ == 'Raw':
-            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';', encoding_errors='ignore')
+            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';' )
             
         if type_ == 'Fit':
-            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';', encoding_errors='ignore')
+            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';' )
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -488,7 +488,7 @@ class extract:
     
     # ---- Other
     def seccm_data(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, encoding_errors='ignore')
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1 )
         
         t = np.array(df['t'])
         v = np.array(df['v'])
