@@ -106,6 +106,30 @@ class extract_data():
                     print("ERROR loading file:")
                     print(file)
                     traceback.print_exc()
+                    
+                try:
+                    with open(file, "r", encoding="utf-8-sig") as f:
+                        is_otherpot = any(
+                            line.startswith("Index,")
+                            and "Potential (V)" in line
+                            and "Current" in line
+                            for line in f
+                        )
+                
+                    if is_otherpot:
+                        Ts, Vs, Is, sweeps = extract.otherpot_data_norm(file)
+                        print(f'\nPloting Other potentiostat .txt file: {file.rsplit("/", 1)[-1]}')
+                
+                        NUM_SWEEPS = int(sweeps[-1])
+                        if NUM_SWEEPS == 0:
+                            NUM_SWEEPS = 1
+                
+                        print(f"Number of cycles: {NUM_SWEEPS}")
+                
+                except Exception:
+                    print("ERROR loading Other potentiostat file:")
+                    print(file)
+                    traceback.print_exc()
                 
             if file.endswith('.mat'):
                 while True:
@@ -240,6 +264,30 @@ class extract_data():
                     if NUM_SWEEPS == 0: #If no cycles, NUM_SWEEPS need to be set to 1
                         NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
+                    
+                try:
+                    with open(f, "r", encoding="utf-8-sig") as file_obj:
+                        is_otherpot = any(
+                            line.startswith("Index,")
+                            and "Potential (V)" in line
+                            and "Current" in line
+                            for line in file_obj
+                        )
+                
+                    if is_otherpot:
+                        Ts, Vs, Is, sweeps = extract.otherpot_data_norm(f)
+                        print(f'\nPloting Other potentiostat .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
+                
+                        NUM_SWEEPS = int(sweeps[-1])
+                        if NUM_SWEEPS == 0:
+                            NUM_SWEEPS = 1
+                
+                        print(f"Number of cycles: {NUM_SWEEPS}")
+                
+                except Exception:
+                    print("ERROR loading Other potentiostat file:")
+                    print(f)
+                    traceback.print_exc()
                     
                 if Ts is not None:
                     ##Split file by number of sweeps
@@ -640,6 +688,57 @@ class extract:
         sweeps = np.ones(len(v)) # CHI file does not include cycle number column
 
         return t, v, i, sweeps  
+    
+    def otherpot_data_norm(file):
+        """
+        Parser for files like:
+        Plot Name:,Voltammogram
+        ,Trace Name:,Current vs Potential,
+        Index,Current vs Potential Potential (V),Current (µA)
+    
+        Returns:
+            t, v, i, sweeps
+        where current is converted from µA to A.
+        """
+    
+        # Read lines first to find the real data header
+        with open(file, "r", encoding="utf-8-sig") as f:
+            lines = f.readlines()
+    
+        header_row = [
+            n for n, line in enumerate(lines)
+            if line.startswith("Index,")
+            and "Potential (V)" in line
+            and "Current" in line
+        ][0]
+    
+        df = pd.read_csv(
+            file,
+            skiprows=header_row,
+            sep=",",
+            encoding="utf-8-sig"
+        )
+    
+        df = df.dropna()
+    
+        index_col = df.columns[0]
+        potential_col = [c for c in df.columns if "Potential (V)" in c][0]
+        current_col = [c for c in df.columns if "Current" in c and c != potential_col][0]
+    
+        # No real time column in this file, so use index as pseudo-time
+        t = np.array(df[index_col], dtype=float)
+    
+        # Potential is already in V
+        v = np.array(df[potential_col], dtype=float)
+    
+        # Current is in µA, convert to A
+        i = np.array(df[current_col], dtype=float) * 1e-6
+    
+        # File has no cycle-number column, so treat as one sweep/cycle
+        sweeps = np.ones(len(v), dtype=int)
+        print(t,v,i,sweeps)
+    
+        return t, v, i, sweeps
     
 if __name__ == '__main__':
     class DummyGUI:
