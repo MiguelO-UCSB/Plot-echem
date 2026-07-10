@@ -24,9 +24,9 @@ class extract_data():
             Ts = None
             freq = None
             if file.endswith('.txt'):
-                get_col = list(pd.read_csv(file, sep='\t', nrows=1).columns)
+                get_col = list(pd.read_csv(file, sep='\t', nrows=1, encoding_errors='ignore').columns)
                 if len(get_col) == 1:
-                    get_col = list(pd.read_csv(file, sep=';', nrows=1).columns)
+                    get_col = list(pd.read_csv(file, sep=';', nrows=1, encoding_errors='ignore').columns)
                 # print(get_col)
                 
                 if get_col[0] == 'Index':
@@ -64,7 +64,10 @@ class extract_data():
                     print(f'\nPloting EIS .txt file: {file.rsplit("/", 1)[-1]}')
                 
                 if len(get_col) == 4 and get_col[0] == 'time/s':
-                    Ts, Vs, Is = extract.bio_data_no_cycle(file)
+                    if get_col[2] == 'I delta/A':
+                        Ts, Vs, Is = extract.bio_data_DPV(file)
+                    else:
+                        Ts, Vs, Is = extract.bio_data_no_cycle(file)
                     print(f'\nPloting .txt file: {file.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                 
@@ -173,9 +176,9 @@ class extract_data():
                 Ts = None
                 freq = None
                 ## Column names for data frame to distinguish exported .txt file
-                get_col = list(pd.read_csv(f, sep='\t', nrows=1).columns)
+                get_col = list(pd.read_csv(f, sep='\t', nrows=1, encoding_errors='ignore').columns)
                 if len(get_col) == 1:
-                    get_col = list(pd.read_csv(f, sep=';', nrows=1).columns)
+                    get_col = list(pd.read_csv(f, sep=';', nrows=1, encoding_errors='ignore').columns)
                 # print(get_col)
                 
                 if get_col[0] == 'Index':
@@ -212,11 +215,14 @@ class extract_data():
                     print(f'\nPloting EIS .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     
                 if len(get_col) == 4 and get_col[0] == 'time/s':
-                    Ts, Vs, Is = extract.bio_data_no_cycle(f)
+                    if get_col[2] == 'I delta/A':
+                        Ts, Vs, Is = extract.bio_data_DPV(f)
+                    else:
+                        Ts, Vs, Is = extract.bio_data_no_cycle(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
                     NUM_SWEEPS = 1
                     print(f'Number of cycles: {NUM_SWEEPS}')
-                
+                    
                 if len(get_col) == 5 and get_col[0] == 'time/s':
                     Ts, Vs, Is, sweeps = extract.bio_data_norm(f)
                     print(f'\nPloting .txt file {file_num+1}: {f.rsplit("/", 1)[-1]}')
@@ -337,7 +343,7 @@ class extract_data():
 class extract:
     # ---- Biologic
     def bio_data_OVP(file):
-        df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('t', 'v'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -346,7 +352,7 @@ class extract:
         return t, v, i
     
     def bio_data_PEIS(file):
-        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -357,7 +363,7 @@ class extract:
         return freq, real_Z, imag_Z, abs_Z, phase
     
     def bio_data_PEIS_cycles(file):
-        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 'nc'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 'nc'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -369,7 +375,7 @@ class extract:
         return freq, real_Z, imag_Z, abs_Z, phase, sweeps
     
     def bio_data_no_cycle(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -378,7 +384,7 @@ class extract:
         return t, v, i
     
     def bio_data_norm(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -388,7 +394,7 @@ class extract:
         return t, v, i, sweeps
     
     def bio_data_5norm(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number', 'ns'), skiprows=1, sep='\t')
+        df = pd.read_csv(file, names=('t', 'v', 'i', 'cycle number', 'ns'), skiprows=1, sep='\t', encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -397,9 +403,18 @@ class extract:
         
         return t, v, i, sweeps
     
+    def bio_data_DPV(file):
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, sep='\t', encoding_errors='ignore')
+        
+        t = np.array(df['t'])
+        v = np.array(df['v'])
+        i = np.array(df['i'])*1e-6            # Conversion to amps. i.e. data in uA
+        
+        return t, v, i
+    
     # ---- AutoLab
     def autolab_data_norm(file):
-        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';')
+        df = pd.read_csv(file, names=('Potential applied', 't', 'i', 'v', 'cycle number', 'Index', 'Q+', 'Q-', 'current range'), skiprows=1, sep=';', encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -410,10 +425,10 @@ class extract:
     
     def autolab_data_PEIS(file, type_):
         if type_ == 'Raw':
-            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';')
+            df = pd.read_csv(file, names=('Index', 'freq', 'r(Z)', 'im(Z)', '|Z|', 'phase', 't'), skiprows=1, sep=';', encoding_errors='ignore')
             
         if type_ == 'Fit':
-            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';')
+            df = pd.read_csv(file, names=('r(Z)', 'im(Z)', 'Error r(Z)', 'Error im(Z)', '|Z|', 'phase', 'freq', 'convergence', 'number of iterations', 'Chi-squared'), skiprows=1, sep=';', encoding_errors='ignore')
         
         freq = np.array(df['freq'])
         real_Z = np.array(df['r(Z)'])
@@ -425,7 +440,7 @@ class extract:
     
     # ---- Other
     def seccm_data(file):
-        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1,)
+        df = pd.read_csv(file, names=('t', 'v', 'i'), skiprows=1, encoding_errors='ignore')
         
         t = np.array(df['t'])
         v = np.array(df['v'])
@@ -634,12 +649,12 @@ if __name__ == '__main__':
             return input()  # or return a default value for testing
     
     folder = r'Z:\Projects\Miguel\Raw data\2025\test\Biologic EIS test'
-    folder = r'Z:\Projects\Miguel\Raw data\2026\4-13-26\Pt micro FFTEIS'
+    folder = r'Z:\Projects\Ishaan\Raw Data\2026\7-9-26\DPV'
     Multi_files = True
 
     extractor = extract_data()
     dummy_gui = DummyGUI()
 
     out = extractor.read_file(folder, Multi_files, dummy_gui)
-    # print("\n--- Extracted Data ---")
-    # print(out)                        
+    print("\n--- Extracted Data ---")
+    print(out)                        
